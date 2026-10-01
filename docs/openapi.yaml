@@ -1,0 +1,2722 @@
+openapi: 3.0.3
+info:
+  title: Electrónica Central AZ API
+  version: 0.1.0
+  description: "API backend de Electrónica Central AZ. Auth Bearer JWT. Zona
+    reportes: America/La_Paz."
+servers:
+  - url: http://localhost:3000
+    description: Local
+tags:
+  - name: Health
+  - name: Auth
+  - name: CatalogoPublico
+  - name: Catalogo
+  - name: Seguridad
+  - name: Clientes
+  - name: Inventario
+  - name: Proveedores
+  - name: Compras
+  - name: Ventas
+  - name: Pagos
+  - name: Solicitudes
+  - name: Reportes
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Health check
+      tags:
+        - Health
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security: []
+  /ready:
+    get:
+      operationId: getReady
+      summary: Readiness (PostgreSQL)
+      tags:
+        - Health
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security: []
+  /api/auth/registro:
+    post:
+      operationId: authRegister
+      summary: Registro cliente
+      tags:
+        - Auth
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombreUsuario
+                - correo
+                - contrasena
+                - nombre
+              properties:
+                nombreUsuario:
+                  type: string
+                  minLength: 3
+                correo:
+                  type: string
+                  format: email
+                contrasena:
+                  type: string
+                  minLength: 12
+                nombre:
+                  type: string
+                telefono:
+                  type: string
+            example:
+              nombreUsuario: ejemplo-nombreUsuario
+              correo: demo@example.test
+              contrasena: ClaveDePruebaSegura123
+              nombre: ejemplo-nombre
+              telefono: ejemplo-telefono
+  /api/auth/login:
+    post:
+      operationId: authLogin
+      summary: Login
+      tags:
+        - Auth
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identificador
+                - contrasena
+              properties:
+                identificador:
+                  type: string
+                contrasena:
+                  type: string
+            example:
+              identificador: "{{adminEmail}}"
+              contrasena: ClaveDePruebaSegura123
+  /api/auth/me:
+    get:
+      operationId: authMe
+      summary: Perfil sesión
+      tags:
+        - Auth
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+  /api/auth/logout:
+    post:
+      operationId: authLogout
+      summary: Cerrar sesión
+      tags:
+        - Auth
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+  /api/auth/cambiar-contrasena:
+    post:
+      operationId: authChangePassword
+      summary: Cambiar contraseña
+      tags:
+        - Auth
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contrasenaActual
+                - contrasenaNueva
+              properties:
+                contrasenaActual:
+                  type: string
+                contrasenaNueva:
+                  type: string
+                  minLength: 12
+            example:
+              contrasenaActual: ClaveDePruebaSegura123
+              contrasenaNueva: ClaveDePruebaSegura123
+  /api/catalogo/productos:
+    get:
+      operationId: catalogPublicList
+      summary: Catálogo público
+      tags:
+        - CatalogoPublico
+      parameters:
+        - name: buscar
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: idCategoria
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: idMarca
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: idModelo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security: []
+  /api/catalogo/productos/{id}:
+    get:
+      operationId: catalogPublicGet
+      summary: Producto público
+      tags:
+        - CatalogoPublico
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security: []
+  /api/catalogo/filtros:
+    get:
+      operationId: catalogFilters
+      summary: Filtros catálogo
+      tags:
+        - CatalogoPublico
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security: []
+  /api/categorias:
+    post:
+      operationId: createCategoria
+      summary: Crear categoría
+      tags:
+        - Catalogo
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre
+              properties:
+                nombre:
+                  type: string
+                descripcion:
+                  type: string
+            example:
+              nombre: ejemplo-nombre
+              descripcion: ejemplo-descripcion
+  /api/marcas:
+    post:
+      operationId: createMarca
+      summary: Crear marca
+      tags:
+        - Catalogo
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre
+              properties:
+                nombre:
+                  type: string
+            example:
+              nombre: ejemplo-nombre
+  /api/unidades:
+    post:
+      operationId: createUnidad
+      summary: Crear unidad
+      tags:
+        - Catalogo
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre
+                - simbolo
+              properties:
+                nombre:
+                  type: string
+                simbolo:
+                  type: string
+                permiteFraccion:
+                  type: boolean
+                  default: false
+            example:
+              nombre: ejemplo-nombre
+              simbolo: ejemplo-simbolo
+              permiteFraccion: false
+  /api/ubicaciones:
+    post:
+      operationId: createUbicacion
+      summary: Crear ubicación
+      tags:
+        - Catalogo
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - codigo
+                - pasillo
+                - estante
+              properties:
+                codigo:
+                  type: string
+                pasillo:
+                  type: string
+                estante:
+                  type: string
+            example:
+              codigo: ejemplo-codigo
+              pasillo: ejemplo-pasillo
+              estante: ejemplo-estante
+  /api/modelos:
+    post:
+      operationId: createModelo
+      summary: Crear modelo
+      tags:
+        - Catalogo
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre
+                - idMarca
+              properties:
+                nombre:
+                  type: string
+                descripcion:
+                  type: string
+                idMarca:
+                  type: string
+                  format: uuid
+            example:
+              nombre: ejemplo-nombre
+              descripcion: ejemplo-descripcion
+              idMarca: "{{idMarca}}"
+  /api/productos:
+    post:
+      operationId: createProducto
+      summary: Crear producto
+      tags:
+        - Catalogo
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - codigo
+                - nombre
+                - precioVenta
+                - idCategoria
+                - idUnidadMedida
+                - idUbicacion
+              properties:
+                codigo:
+                  type: string
+                nombre:
+                  type: string
+                descripcion:
+                  type: string
+                precioVenta:
+                  type: number
+                idCategoria:
+                  type: string
+                  format: uuid
+                idUnidadMedida:
+                  type: string
+                  format: uuid
+                idUbicacion:
+                  type: string
+                  format: uuid
+                idMarca:
+                  type: string
+                  format: uuid
+                idModelo:
+                  type: string
+                  format: uuid
+                stockMinimo:
+                  type: number
+                  default: 0
+            example:
+              codigo: ejemplo-codigo
+              nombre: ejemplo-nombre
+              descripcion: ejemplo-descripcion
+              precioVenta: 1
+              idCategoria: "{{idCategoria}}"
+              idUnidadMedida: "{{idUnidadMedida}}"
+              idUbicacion: "{{idUbicacion}}"
+              idMarca: "{{idMarca}}"
+              idModelo: "{{idModelo}}"
+              stockMinimo: 0
+  /api/productos/{id}:
+    patch:
+      operationId: deactivateProducto
+      summary: Desactivar producto
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - activo
+              properties:
+                activo:
+                  type: boolean
+                  enum:
+                    - false
+            example:
+              activo: false
+  /api/productos/{id}/compatibilidades:
+    post:
+      operationId: createCompatibilidad
+      summary: Alta compatibilidad
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idModelo
+              properties:
+                idModelo:
+                  type: string
+                  format: uuid
+                observaciones:
+                  type: string
+            example:
+              idModelo: "{{idModelo}}"
+              observaciones: ejemplo-observaciones
+  /api/productos/{id}/compatibilidades/{idModelo}:
+    delete:
+      operationId: deleteCompatibilidad
+      summary: Borrar compatibilidad
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: idModelo
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+  /api/usuarios:
+    get:
+      operationId: listUsuarios
+      summary: Listar usuarios
+      tags:
+        - Seguridad
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `USUARIOS_GESTIONAR` (o roles Admin/Dev según seed).
+    post:
+      operationId: createUsuario
+      summary: Crear usuario
+      tags:
+        - Seguridad
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `USUARIOS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombreUsuario
+                - correo
+                - contrasena
+                - roles
+              properties:
+                nombreUsuario:
+                  type: string
+                correo:
+                  type: string
+                  format: email
+                contrasena:
+                  type: string
+                  minLength: 12
+                roles:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - VENDEDOR
+                      - CLIENTE
+            example:
+              nombreUsuario: ejemplo-nombreUsuario
+              correo: demo@example.test
+              contrasena: ClaveDePruebaSegura123
+              roles: []
+  /api/usuarios/{id}/restablecer:
+    post:
+      operationId: resetUsuario
+      summary: Restablecer acceso
+      tags:
+        - Seguridad
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `USUARIOS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contrasenaTemporal
+              properties:
+                contrasenaTemporal:
+                  type: string
+                  minLength: 12
+            example:
+              contrasenaTemporal: ClaveDePruebaSegura123
+  /api/clientes:
+    get:
+      operationId: listClientes
+      summary: Listar clientes
+      tags:
+        - Clientes
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CLIENTES_GESTIONAR` (o roles Admin/Dev según seed).
+    post:
+      operationId: createCliente
+      summary: Registrar cliente
+      tags:
+        - Clientes
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CLIENTES_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre
+              properties:
+                nombre:
+                  type: string
+                documento:
+                  type: string
+                telefono:
+                  type: string
+                correo:
+                  type: string
+                  format: email
+            example:
+              nombre: ejemplo-nombre
+              documento: ejemplo-documento
+              telefono: ejemplo-telefono
+              correo: demo@example.test
+  /api/bitacora:
+    get:
+      operationId: listBitacora
+      summary: Consultar bitácora
+      tags:
+        - Seguridad
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `BITACORA_CONSULTAR` (o roles Admin/Dev según seed).
+  /api/inventario:
+    get:
+      operationId: listInventario
+      summary: Listar inventario
+      tags:
+        - Inventario
+      parameters:
+        - name: buscar
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `INVENTARIO_CONSULTAR` (o roles Admin/Dev según seed).
+  /api/inventario/alertas:
+    get:
+      operationId: listInventarioAlertas
+      summary: Alertas stock
+      tags:
+        - Inventario
+      parameters:
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `INVENTARIO_CONSULTAR` (o roles Admin/Dev según seed).
+  /api/inventario/{productoId}/movimientos:
+    get:
+      operationId: listMovimientos
+      summary: Movimientos por producto
+      tags:
+        - Inventario
+      parameters:
+        - name: productoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `INVENTARIO_CONSULTAR` (o roles Admin/Dev según seed).
+  /api/inventario/{productoId}:
+    patch:
+      operationId: patchStockMinimo
+      summary: Actualizar stock mínimo
+      tags:
+        - Inventario
+      parameters:
+        - name: productoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `INVENTARIO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - stockMinimo
+              properties:
+                stockMinimo:
+                  type: number
+            example:
+              stockMinimo: 1
+  /api/inventario/ajustes:
+    post:
+      operationId: createAjuste
+      summary: Ajuste inventario
+      tags:
+        - Inventario
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `INVENTARIO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idProducto
+                - tipo
+                - cantidad
+                - motivo
+                - claveIdempotencia
+              properties:
+                idProducto:
+                  type: string
+                  format: uuid
+                tipo:
+                  type: string
+                  enum:
+                    - ENTRADA
+                    - SALIDA
+                cantidad:
+                  type: number
+                motivo:
+                  type: string
+                costoUnitario:
+                  type: number
+                claveIdempotencia:
+                  type: string
+            example:
+              idProducto: "{{idProducto}}"
+              tipo: ENTRADA
+              cantidad: 1
+              motivo: ejemplo-motivo
+              costoUnitario: 1
+              claveIdempotencia: idem-{{$timestamp}}
+  /api/inventario/aperturas/preview:
+    post:
+      operationId: previewApertura
+      summary: Preview apertura
+      tags:
+        - Inventario
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `INVENTARIO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      codigo:
+                        type: string
+                      idProducto:
+                        type: string
+                        format: uuid
+                      cantidad:
+                        type: number
+                      precioExcel:
+                        type: number
+            example:
+              items:
+                - codigo: ejemplo-codigo
+                  idProducto: "{{idProducto}}"
+                  cantidad: 1
+                  precioExcel: 1
+  /api/inventario/aperturas/confirm:
+    post:
+      operationId: confirmApertura
+      summary: Confirmar apertura
+      tags:
+        - Inventario
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `INVENTARIO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - claveIdempotencia
+                - items
+              properties:
+                claveIdempotencia:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - idProducto
+                      - cantidad
+                      - costoUnitario
+                    properties:
+                      idProducto:
+                        type: string
+                        format: uuid
+                      cantidad:
+                        type: number
+                      costoUnitario:
+                        type: number
+            example:
+              claveIdempotencia: idem-{{$timestamp}}
+              items:
+                - idProducto: "{{idProducto}}"
+                  cantidad: 1
+                  costoUnitario: 1
+  /api/proveedores:
+    get:
+      operationId: listProveedores
+      summary: Listar proveedores
+      tags:
+        - Proveedores
+      parameters:
+        - name: buscar
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: activo
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+    post:
+      operationId: createProveedor
+      summary: Crear proveedor
+      tags:
+        - Proveedores
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - razonSocial
+              properties:
+                razonSocial:
+                  type: string
+                documento:
+                  type: string
+                telefono:
+                  type: string
+                correo:
+                  type: string
+                  format: email
+                direccion:
+                  type: string
+            example:
+              razonSocial: ejemplo-razonSocial
+              documento: ejemplo-documento
+              telefono: ejemplo-telefono
+              correo: demo@example.test
+              direccion: ejemplo-direccion
+  /api/proveedores/{id}:
+    get:
+      operationId: getProveedor
+      summary: Detalle proveedor
+      tags:
+        - Proveedores
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+    patch:
+      operationId: updateProveedor
+      summary: Actualizar proveedor
+      tags:
+        - Proveedores
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                razonSocial:
+                  type: string
+                documento:
+                  type: string
+                telefono:
+                  type: string
+                correo:
+                  type: string
+                  format: email
+                direccion:
+                  type: string
+                activo:
+                  type: boolean
+            example:
+              razonSocial: ejemplo-razonSocial
+              documento: ejemplo-documento
+              telefono: ejemplo-telefono
+              correo: demo@example.test
+              direccion: ejemplo-direccion
+              activo: true
+  /api/compras:
+    get:
+      operationId: listCompras
+      summary: Listar compras
+      tags:
+        - Compras
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - PENDIENTE
+              - RECIBIDA
+              - CANCELADA
+        - name: idProveedor
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+    post:
+      operationId: createCompra
+      summary: Crear compra
+      tags:
+        - Compras
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idProveedor
+                - detalles
+              properties:
+                idProveedor:
+                  type: string
+                  format: uuid
+                fecha:
+                  type: string
+                  format: date-time
+                detalles:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - idProducto
+                      - cantidad
+                      - costoUnitario
+                    properties:
+                      idProducto:
+                        type: string
+                        format: uuid
+                      cantidad:
+                        type: number
+                      costoUnitario:
+                        type: number
+            example:
+              idProveedor: "{{idProveedor}}"
+              fecha: 2026-09-25T21:41:59.996Z
+              detalles:
+                - idProducto: "{{idProducto}}"
+                  cantidad: 1
+                  costoUnitario: 1
+  /api/compras/{id}:
+    get:
+      operationId: getCompra
+      summary: Detalle compra
+      tags:
+        - Compras
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+    patch:
+      operationId: updateCompra
+      summary: Editar compra pendiente
+      tags:
+        - Compras
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idProveedor
+                - detalles
+              properties:
+                idProveedor:
+                  type: string
+                  format: uuid
+                fecha:
+                  type: string
+                  format: date-time
+                detalles:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - idProducto
+                      - cantidad
+                      - costoUnitario
+                    properties:
+                      idProducto:
+                        type: string
+                        format: uuid
+                      cantidad:
+                        type: number
+                      costoUnitario:
+                        type: number
+            example:
+              idProveedor: "{{idProveedor}}"
+              fecha: 2026-09-25T21:41:59.996Z
+              detalles:
+                - idProducto: "{{idProducto}}"
+                  cantidad: 1
+                  costoUnitario: 1
+  /api/compras/{id}/recibir:
+    post:
+      operationId: receiveCompra
+      summary: Recibir compra
+      tags:
+        - Compras
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - claveIdempotencia
+              properties:
+                claveIdempotencia:
+                  type: string
+            example:
+              claveIdempotencia: idem-{{$timestamp}}
+  /api/compras/{id}/cancelar:
+    post:
+      operationId: cancelCompra
+      summary: Cancelar compra
+      tags:
+        - Compras
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `COMPRAS_GESTIONAR` (o roles Admin/Dev según seed).
+  /api/ventas:
+    get:
+      operationId: listVentas
+      summary: Listar ventas
+      tags:
+        - Ventas
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - BORRADOR
+              - CONFIRMADA
+              - ANULADA
+        - name: idCliente
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+    post:
+      operationId: createVenta
+      summary: Crear venta borrador
+      tags:
+        - Ventas
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idCliente
+                - detalles
+              properties:
+                idCliente:
+                  type: string
+                  format: uuid
+                detalles:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - idProducto
+                      - cantidad
+                    properties:
+                      idProducto:
+                        type: string
+                        format: uuid
+                      cantidad:
+                        type: number
+                      precioUnitario:
+                        type: number
+            example:
+              idCliente: "{{idCliente}}"
+              detalles:
+                - idProducto: "{{idProducto}}"
+                  cantidad: 1
+                  precioUnitario: 1
+  /api/ventas/{id}:
+    get:
+      operationId: getVenta
+      summary: Detalle venta
+      tags:
+        - Ventas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+    patch:
+      operationId: updateVenta
+      summary: Editar borrador
+      tags:
+        - Ventas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idCliente
+                - detalles
+              properties:
+                idCliente:
+                  type: string
+                  format: uuid
+                detalles:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - idProducto
+                      - cantidad
+                    properties:
+                      idProducto:
+                        type: string
+                        format: uuid
+                      cantidad:
+                        type: number
+                      precioUnitario:
+                        type: number
+            example:
+              idCliente: "{{idCliente}}"
+              detalles:
+                - idProducto: "{{idProducto}}"
+                  cantidad: 1
+                  precioUnitario: 1
+  /api/ventas/{id}/confirmar:
+    post:
+      operationId: confirmVenta
+      summary: Confirmar venta
+      tags:
+        - Ventas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - claveIdempotencia
+              properties:
+                claveIdempotencia:
+                  type: string
+            example:
+              claveIdempotencia: idem-{{$timestamp}}
+  /api/ventas/{id}/anular:
+    post:
+      operationId: anularVenta
+      summary: Anular venta
+      tags:
+        - Ventas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - claveIdempotencia
+              properties:
+                claveIdempotencia:
+                  type: string
+            example:
+              claveIdempotencia: idem-{{$timestamp}}
+  /api/ventas/{id}/comprobante:
+    get:
+      operationId: getComprobante
+      summary: Comprobante JSON/PDF
+      tags:
+        - Ventas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: formato
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - pdf
+            default: json
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+  /api/ventas/{id}/entrega:
+    post:
+      operationId: deliverVenta
+      summary: Registrar entrega
+      tags:
+        - Ventas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - claveIdempotencia
+              properties:
+                claveIdempotencia:
+                  type: string
+            example:
+              claveIdempotencia: idem-{{$timestamp}}
+  /api/ventas/{id}/pagos:
+    get:
+      operationId: listPagosVenta
+      summary: Listar pagos de venta
+      tags:
+        - Pagos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+    post:
+      operationId: createPago
+      summary: Registrar pago
+      tags:
+        - Pagos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - monto
+                - metodo
+              properties:
+                monto:
+                  type: number
+                metodo:
+                  type: string
+                  enum:
+                    - EFECTIVO
+                    - QR
+                referenciaExterna:
+                  type: string
+            example:
+              monto: 1
+              metodo: EFECTIVO
+              referenciaExterna: ejemplo-referenciaExterna
+  /api/pagos/{id}/confirmar:
+    post:
+      operationId: confirmPago
+      summary: Confirmar pago
+      tags:
+        - Pagos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - claveIdempotencia
+              properties:
+                claveIdempotencia:
+                  type: string
+            example:
+              claveIdempotencia: idem-{{$timestamp}}
+  /api/pagos/{id}/rechazar:
+    post:
+      operationId: rejectPago
+      summary: Rechazar pago
+      tags:
+        - Pagos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `VENTAS_GESTIONAR` (o roles Admin/Dev según seed).
+  /api/solicitudes:
+    get:
+      operationId: listSolicitudes
+      summary: Listar solicitudes
+      tags:
+        - Solicitudes
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - PENDIENTE
+              - ATENDIDA
+              - CANCELADA
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+    post:
+      operationId: createSolicitud
+      summary: Crear solicitud
+      tags:
+        - Solicitudes
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - descripcionProducto
+                - cantidad
+              properties:
+                descripcionProducto:
+                  type: string
+                cantidad:
+                  type: number
+                observaciones:
+                  type: string
+                idCliente:
+                  type: string
+                  format: uuid
+                idProducto:
+                  type: string
+                  format: uuid
+                idModelo:
+                  type: string
+                  format: uuid
+            example:
+              descripcionProducto: ejemplo-descripcionProducto
+              cantidad: 1
+              observaciones: ejemplo-observaciones
+              idCliente: "{{idCliente}}"
+              idProducto: "{{idProducto}}"
+              idModelo: "{{idModelo}}"
+  /api/solicitudes/{id}:
+    get:
+      operationId: getSolicitud
+      summary: Detalle solicitud
+      tags:
+        - Solicitudes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+  /api/solicitudes/{id}/estado:
+    patch:
+      operationId: patchSolicitudEstado
+      summary: Atender/cancelar (Admin)
+      tags:
+        - Solicitudes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - estado
+              properties:
+                estado:
+                  type: string
+                  enum:
+                    - ATENDIDA
+                    - CANCELADA
+            example:
+              estado: ATENDIDA
+  /api/reportes/ventas:
+    get:
+      operationId: reportVentas
+      summary: Reporte ventas
+      tags:
+        - Reportes
+      parameters:
+        - name: desde
+          in: query
+          required: true
+          schema:
+            type: string
+            example: 2026-09-01
+            required: true
+        - name: hasta
+          in: query
+          required: true
+          schema:
+            type: string
+            example: 2026-09-30
+            required: true
+        - name: idUsuario
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - BORRADOR
+              - CONFIRMADA
+              - ANULADA
+        - name: formato
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - xlsx
+              - pdf
+            default: json
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `REPORTES_CONSULTAR` (o roles Admin/Dev según seed).
+  /api/reportes/ganancias:
+    get:
+      operationId: reportGanancias
+      summary: Reporte ganancias
+      tags:
+        - Reportes
+      parameters:
+        - name: desde
+          in: query
+          required: true
+          schema:
+            type: string
+            example: 2026-09-01
+            required: true
+        - name: hasta
+          in: query
+          required: true
+          schema:
+            type: string
+            example: 2026-09-30
+            required: true
+        - name: formato
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - xlsx
+              - pdf
+            default: json
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `REPORTES_CONSULTAR` (o roles Admin/Dev según seed).
+  /api/reportes/inventario:
+    get:
+      operationId: reportInventario
+      summary: Reporte inventario
+      tags:
+        - Reportes
+      parameters:
+        - name: fechaCorte
+          in: query
+          required: true
+          schema:
+            type: string
+            example: 2026-09-25
+            required: true
+        - name: formato
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - xlsx
+              - pdf
+            default: json
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `REPORTES_CONSULTAR` (o roles Admin/Dev según seed).
+  /api/reportes/rotacion-demanda:
+    get:
+      operationId: reportRotacion
+      summary: Rotación y demanda
+      tags:
+        - Reportes
+      parameters:
+        - name: desde
+          in: query
+          required: true
+          schema:
+            type: string
+            example: 2026-09-01
+            required: true
+        - name: hasta
+          in: query
+          required: true
+          schema:
+            type: string
+            example: 2026-09-30
+            required: true
+        - name: formato
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - xlsx
+              - pdf
+            default: json
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `REPORTES_CONSULTAR` (o roles Admin/Dev según seed).
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

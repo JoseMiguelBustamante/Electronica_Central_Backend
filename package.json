@@ -1,0 +1,37 @@
+{
+  "name": "electronica-central-az-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node --env-file=.env  index.js",
+    "start": "node --env-file=.env index.js",
+    "lint": "eslint .",
+    "test": "node --env-file=.env ./node_modules/vitest/vitest.mjs run",
+    "build": "node --check index.js && node --check src/app.js",
+    "docs:generate": "node scripts/generateApiDocs.mjs",
+    "seed:local": "node --env-file=.env scripts/seedLocalFromDatos.js",
+    "seed:sql": "node --env-file=.env scripts/generateSeedSql.js",
+    "seed:excel:sql": "node --env-file=.env scripts/generateExcelSeedSql.js",
+    "db:bundle": "node scripts/buildAllMigrationsSql.js",
+    "bootstrap:security": "node --env-file=.env scripts/bootstrapSecurity.js"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "pdfkit": "^0.20.2",
+    "pg": "^8.23.0",
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "^2.9.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/swagger-ui-express": "^4.1.8",
+    "eslint": "^9.23.0",
+    "supertest": "^7.1.0",
+    "vitest": "^3.1.1"
+  }
+}

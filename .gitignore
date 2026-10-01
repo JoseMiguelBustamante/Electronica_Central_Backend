@@ -1,0 +1,33 @@
+# Dependencias y artefactos
+node_modules/
+coverage/
+dist/
+build/
+.vite/
+.cache/
+
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Logs / temp
+*.log
+tmp/
+temp/
+*.tmp
+
+# SO / editor
+.DS_Store
+Thumbs.db
+.idea/
+
+# Seed regenerable / debug local
+scripts/seed/excel-vs-db-report.json
+scripts/seed/excel-structure-sample.json
+scripts/seed/excel-seed-meta.json
+scripts/seed/apertura-preview.json
+scripts/seed/seed-ids.json
+scripts/seed/precios-from-datos.csv
+scripts/seed/_checkUsers.js
+docs/postman/*seeded*.json

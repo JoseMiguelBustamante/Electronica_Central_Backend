@@ -1,0 +1,55 @@
+{
+  "info": {
+    "_postman_id": "b4d491c3-3eef-4aa3-8e94-7f365e0d7656",
+    "name": "Electrónica Central AZ - Fase 1",
+    "description": "Demo backend de seguridad. Antes de probar rutas protegidas ejecute npm run bootstrap:security con DATABASE_URL y las variables BOOTSTRAP_*. Luego inicie npm start.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "userId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/health" } },
+        { "name": "Ready", "request": { "method": "GET", "url": "{{baseUrl}}/ready" } }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Registro de cliente",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombreUsuario\": \"cliente.demo\",\n  \"correo\": \"cliente.demo@example.test\",\n  \"contrasena\": \"ClienteDemoSeguro123\",\n  \"nombre\": \"Cliente Demo\",\n  \"telefono\": \"70000000\"\n}" }, "url": "{{baseUrl}}/api/auth/registro" }
+        },
+        {
+          "name": "Login cliente (guarda token)",
+          "event": [{ "listen": "test", "script": { "exec": ["const body = pm.response.json();", "pm.test('login exitoso', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('token', body.data.token);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"identificador\": \"cliente.demo@example.test\",\n  \"contrasena\": \"ClienteDemoSeguro123\"\n}" }, "url": "{{baseUrl}}/api/auth/login" }
+        },
+        { "name": "Mi perfil", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/auth/me" } },
+        { "name": "Cambiar contraseña", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"contrasenaActual\": \"ClienteDemoSeguro123\",\n  \"contrasenaNueva\": \"ClienteDemoNueva456\"\n}" }, "url": "{{baseUrl}}/api/auth/cambiar-contrasena" } },
+        { "name": "Logout", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/auth/logout" } }
+      ]
+    },
+    {
+      "name": "Administrador",
+      "item": [
+        {
+          "name": "Login administrador (guarda adminToken)",
+          "event": [{ "listen": "test", "script": { "exec": ["const body = pm.response.json();", "pm.test('login exitoso', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('adminToken', body.data.token);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"identificador\": \"admin\",\n  \"contrasena\": \"CAMBIAR_POR_LA_DE_BOOTSTRAP\"\n}" }, "url": "{{baseUrl}}/api/auth/login" }
+        },
+        { "name": "Listar usuarios", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/usuarios" } },
+        { "name": "Registrar cliente presencial", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Cliente Presencial Demo\",\n  \"documento\": \"DEMO-001\",\n  \"telefono\": \"71111111\"\n}" }, "url": "{{baseUrl}}/api/clientes" } },
+        { "name": "Listar clientes", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/clientes" } },
+        { "name": "Restablecer usuario", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"contrasenaTemporal\": \"TemporalDemoSegura123\"\n}" }, "url": "{{baseUrl}}/api/usuarios/{{userId}}/restablecer" } },
+        { "name": "Consultar bitácora", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/bitacora" } }
+      ]
+    }
+  ]
+}
