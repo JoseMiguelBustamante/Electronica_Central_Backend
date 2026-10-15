@@ -11,6 +11,11 @@ import {
   getCatalogFiltersService,
   getPublicProductByIdService,
   getPublicProductsService,
+  listBrandsService,
+  listCategoriesService,
+  listLocationsService,
+  listModelsService,
+  listUnitsService,
 } from '../services/catalogService.js';
 import { sendError } from '../utils/sendError.js';
 
@@ -79,6 +84,20 @@ export const getPublicProductByIdController = async (req, res) => {
     return sendError(res, error);
   }
 };
+
+const listCatalogController = (service) => async (_req, res) => {
+  try {
+    return res.status(200).json({ data: await service() });
+  } catch (error) {
+    return sendError(res, error);
+  }
+};
+
+export const listCategoriesController = listCatalogController(listCategoriesService);
+export const listBrandsController = listCatalogController(listBrandsService);
+export const listUnitsController = listCatalogController(listUnitsService);
+export const listLocationsController = listCatalogController(listLocationsService);
+export const listModelsController = listCatalogController(listModelsService);
 
 export const getCatalogFiltersController = async (_req, res) => {
   try {

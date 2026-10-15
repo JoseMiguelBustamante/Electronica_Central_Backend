@@ -1,5 +1,35 @@
 import { query, withTransaction } from '../lib/database.js';
 
+export const listCategories = () => query(
+  `SELECT id_categoria, nombre, descripcion
+   FROM electronica_az.categoria
+   ORDER BY nombre`,
+);
+
+export const listBrands = () => query(
+  `SELECT id_marca, nombre
+   FROM electronica_az.marca
+   ORDER BY nombre`,
+);
+
+export const listUnits = () => query(
+  `SELECT id_unidad_medida, nombre, simbolo, permite_fraccion
+   FROM electronica_az.unidad_medida
+   ORDER BY nombre`,
+);
+
+export const listLocations = () => query(
+  `SELECT id_ubicacion, codigo, pasillo, estante
+   FROM electronica_az.ubicacion
+   ORDER BY codigo`,
+);
+
+export const listModels = () => query(
+  `SELECT id_modelo, nombre, descripcion, id_marca
+   FROM electronica_az.modelo
+   ORDER BY nombre`,
+);
+
 export const createCategory = (nombre, descripcion) => query(
   'INSERT INTO electronica_az.categoria(nombre, descripcion) VALUES($1, $2) RETURNING *',
   [nombre, descripcion],

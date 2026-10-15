@@ -12,6 +12,11 @@ import {
   getCatalogFiltersController,
   getPublicProductByIdController,
   getPublicProductsController,
+  listBrandsController,
+  listCategoriesController,
+  listLocationsController,
+  listModelsController,
+  listUnitsController,
 } from '../controllers/catalogController.js';
 import {
   compatibilityParamsDto,
@@ -37,6 +42,11 @@ catalogRouter.get('/catalogo/productos', validateQuery(publicProductsQueryDto), 
 catalogRouter.get('/catalogo/productos/:id', validateParams(productIdParamsDto), getPublicProductByIdController);
 catalogRouter.get('/catalogo/filtros', getCatalogFiltersController);
 
+catalogRouter.get('/categorias', ...manageCatalog, listCategoriesController);
+catalogRouter.get('/marcas', ...manageCatalog, listBrandsController);
+catalogRouter.get('/unidades', ...manageCatalog, listUnitsController);
+catalogRouter.get('/ubicaciones', ...manageCatalog, listLocationsController);
+catalogRouter.get('/modelos', ...manageCatalog, listModelsController);
 catalogRouter.post('/categorias', ...manageCatalog, validateBody(createCategoryDto), createCategoryController);
 catalogRouter.post('/marcas', ...manageCatalog, validateBody(createBrandDto), createBrandController);
 catalogRouter.post('/unidades', ...manageCatalog, validateBody(createUnitDto), createUnitController);

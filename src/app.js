@@ -11,11 +11,13 @@ import requestRouter from './routes/requestRoutes.js';
 import saleRouter from './routes/saleRoutes.js';
 import supplierRouter from './routes/supplierRoutes.js';
 import securityRouter from './routes/securityRoutes.js';
+import { corsMiddleware } from './middlewares/corsMiddleware.js';
 import { sendError } from './utils/sendError.js';
 
 export const createApp = () => {
   const app = express();
 
+  app.use(corsMiddleware);
   app.use(express.json());
   app.use(healthRouter);
   app.use('/api/docs', createDocsRouter());

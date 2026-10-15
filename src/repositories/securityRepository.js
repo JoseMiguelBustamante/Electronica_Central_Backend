@@ -79,8 +79,29 @@ export const addLog = async (action, object, result, userId) => query(
 
 export const listLogs = async () => (
   await query(
-    `SELECT id_registro, fecha_hora, accion, objeto_afectado, resultado, id_usuario
-     FROM electronica_az.registro_bitacora
-     ORDER BY fecha_hora DESC`,
+    `SELECT
+       b.id_registro,
+       b.fecha_hora,
+       b.accion,
+       b.objeto_afectado,
+       b.resultado,
+       b.id_usuario,
+       COALESCE(
+         NULLIF(btrim(actor.nombre_usuario), ''),
+         NULLIF(btrim(actor.correo), ''),
+         'Sin usuario'
+       ) AS usuario,
+       COALESCE(
+         NULLIF(btrim(cliente.nombre), ''),
+         NULLIF(btrim(cliente.correo), ''),
+         NULLIF(btrim(afectado.nombre_usuario), ''),
+         NULLIF(btrim(afectado.correo), ''),
+         b.objeto_afectado
+       ) AS objeto
+     FROM electronica_az.registro_bitacora b
+     LEFT JOIN electronica_az.usuario actor ON actor.id_usuario = b.id_usuario
+     LEFT JOIN electronica_az.cliente cliente ON cliente.id_cliente::text = b.objeto_afectado
+     LEFT JOIN electronica_az.usuario afectado ON afectado.id_usuario::text = b.objeto_afectado
+     ORDER BY b.fecha_hora DESC`,
   )
 ).rows;

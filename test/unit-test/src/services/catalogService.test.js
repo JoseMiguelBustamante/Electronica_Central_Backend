@@ -13,10 +13,15 @@ vi.mock('../../../../src/repositories/catalogRepository.js', () => ({
   getCatalogFilters: vi.fn(),
   getPublicProductById: vi.fn(),
   getPublicProducts: vi.fn(),
+  listBrands: vi.fn(),
+  listCategories: vi.fn(),
+  listLocations: vi.fn(),
+  listModels: vi.fn(),
+  listUnits: vi.fn(),
 }));
 
-import { getPublicProducts } from '../../../../src/repositories/catalogRepository.js';
-import { getPublicProductsService } from '../../../../src/services/catalogService.js';
+import { getPublicProducts, listCategories } from '../../../../src/repositories/catalogRepository.js';
+import { getPublicProductsService, listCategoriesService } from '../../../../src/services/catalogService.js';
 
 describe('catalogService', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -38,5 +43,12 @@ describe('catalogService', () => {
       pagina: 2,
       limite: 10,
     });
+  });
+
+  test('returns category rows from the repository', async () => {
+    const rows = [{ id_categoria: 'cat-1', nombre: 'Cables', descripcion: null }];
+    listCategories.mockResolvedValue({ rows });
+
+    await expect(listCategoriesService()).resolves.toEqual(rows);
   });
 });

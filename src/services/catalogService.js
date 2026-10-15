@@ -12,6 +12,11 @@ import {
   getCatalogFilters,
   getPublicProductById,
   getPublicProducts,
+  listBrands,
+  listCategories,
+  listLocations,
+  listModels,
+  listUnits,
 } from '../repositories/catalogRepository.js';
 import { AppError } from '../utils/AppError.js';
 
@@ -75,6 +80,11 @@ export const deleteCompatibilityService = async (idProducto, idModelo) => {
 };
 
 export const getCatalogFiltersService = () => getCatalogFilters();
+export const listCategoriesService = async () => (await listCategories()).rows;
+export const listBrandsService = async () => (await listBrands()).rows;
+export const listUnitsService = async () => (await listUnits()).rows;
+export const listLocationsService = async () => (await listLocations()).rows;
+export const listModelsService = async () => (await listModels()).rows;
 
 export const getPublicProductsService = async ({ buscar, idCategoria, idMarca, idModelo, pagina, limite }) => {
   const rows = await getPublicProducts(
