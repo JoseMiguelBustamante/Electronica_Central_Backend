@@ -40,4 +40,80 @@ describe('auth flow with PostgreSQL', () => {
     expect(response.status).toBe(401);
     expect(response.body.error.code).toBe('AU003');
   });
+
+  test('locks after 3 failed logins and recovers via email token', async () => {
+    const localSuffix = `${Date.now()}${Math.floor(Math.random() * 10000)}`;
+    const localPassword = 'ClaveDePruebaSegura123';
+    const local = {
+      nombreUsuario: `lock.${localSuffix}`,
+      correo: `lock.${localSuffix}@example.test`,
+      contrasena: localPassword,
+      nombre: 'Cliente Lockout',
+    };
+
+    const registered = await request(app).post('/api/auth/registro').send(local);
+    expect(registered.status).toBe(201);
+
+    const fail1 = await request(app).post('/api/auth/login').send({
+      identificador: local.correo,
+      contrasena: 'ClaveIncorrecta123',
+    });
+    expect(fail1.status).toBe(401);
+    expect(fail1.body.error.details.intentosRestantes).toBe(2);
+
+    const fail2 = await request(app).post('/api/auth/login').send({
+      identificador: local.correo,
+      contrasena: 'ClaveIncorrecta123',
+    });
+    expect(fail2.status).toBe(401);
+    expect(fail2.body.error.details.intentosRestantes).toBe(1);
+
+    const fail3 = await request(app).post('/api/auth/login').send({
+      identificador: local.correo,
+      contrasena: 'ClaveIncorrecta123',
+    });
+    expect(fail3.status).toBe(423);
+    expect(fail3.body.error.code).toBe('AU004');
+
+    const whileLocked = await request(app).post('/api/auth/login').send({
+      identificador: local.correo,
+      contrasena: localPassword,
+    });
+    expect(whileLocked.status).toBe(423);
+
+    const recover = await request(app).post('/api/auth/recuperar').send({ correo: local.correo });
+    expect(recover.status).toBe(200);
+    expect(recover.body.data.enviado).toBe(true);
+    expect(typeof recover.body.data.debugToken).toBe('string');
+
+    const weak = await request(app).post('/api/auth/restablecer').send({
+      token: recover.body.data.debugToken,
+      contrasenaNueva: 'sinmayuscula1',
+    });
+    expect(weak.status).toBe(400);
+
+    const newPassword = 'NuevaClaveSegura99';
+    const reset = await request(app).post('/api/auth/restablecer').send({
+      token: recover.body.data.debugToken,
+      contrasenaNueva: newPassword,
+    });
+    expect(reset.status).toBe(200);
+    expect(reset.body.data.restablecido).toBe(true);
+
+    const loginAgain = await request(app).post('/api/auth/login').send({
+      identificador: local.correo,
+      contrasena: newPassword,
+    });
+    expect(loginAgain.status).toBe(200);
+  });
+
+  test('rejects weak passwords on registro', async () => {
+    const weak = await request(app).post('/api/auth/registro').send({
+      nombreUsuario: `weak.${Date.now()}`,
+      correo: `weak.${Date.now()}@example.test`,
+      contrasena: 'todominusculas1',
+      nombre: 'Cliente Debil',
+    });
+    expect(weak.status).toBe(400);
+  });
 });

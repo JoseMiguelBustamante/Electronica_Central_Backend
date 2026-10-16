@@ -13,6 +13,9 @@ export const sendError = (res, error) => {
 
   if (error.details) {
     payload.error.details = error.details;
+    if (typeof error.details.message === 'string' && error.details.message.trim()) {
+      payload.error.message = error.details.message;
+    }
   }
 
   return res.status(statusCode).json(payload);

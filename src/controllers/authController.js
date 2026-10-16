@@ -3,6 +3,8 @@ import {
   loginAuthService,
   logoutAuthService,
   registerAuthService,
+  requestPasswordRecoveryService,
+  resetPasswordWithTokenService,
 } from '../services/authService.js';
 import { sendError } from '../utils/sendError.js';
 
@@ -39,6 +41,26 @@ export const changePasswordAuthController = async (req, res) => {
   try {
     return res.status(200).json({
       data: await changePasswordAuthService(req.auth, req.validated.body),
+    });
+  } catch (error) {
+    return sendError(res, error);
+  }
+};
+
+export const recoverPasswordAuthController = async (req, res) => {
+  try {
+    return res.status(200).json({
+      data: await requestPasswordRecoveryService(req.validated.body),
+    });
+  } catch (error) {
+    return sendError(res, error);
+  }
+};
+
+export const resetPasswordAuthController = async (req, res) => {
+  try {
+    return res.status(200).json({
+      data: await resetPasswordWithTokenService(req.validated.body),
     });
   } catch (error) {
     return sendError(res, error);

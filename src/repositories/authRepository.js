@@ -8,6 +8,8 @@ const userAuthSelect = `
     u.hash_contrasena,
     u.activo,
     u.cambio_contrasena_obligatorio,
+    u.intentos_fallidos,
+    u.bloqueado_hasta,
     COALESCE(array_agg(DISTINCT r.nombre) FILTER (WHERE r.nombre IS NOT NULL), '{}') AS roles,
     COALESCE(array_agg(DISTINCT p.codigo) FILTER (WHERE p.codigo IS NOT NULL), '{}') AS permisos
   FROM electronica_az.usuario u
@@ -86,6 +88,72 @@ export const updatePassword = (userId, hash) => query(
 export const setPasswordChangeRequired = (userId, required) => query(
   'UPDATE electronica_az.usuario SET cambio_contrasena_obligatorio = $1 WHERE id_usuario = $2',
   [required, userId],
+);
+
+export const clearLoginFailures = (userId) => query(
+  `UPDATE electronica_az.usuario
+   SET intentos_fallidos = 0, bloqueado_hasta = NULL
+   WHERE id_usuario = $1`,
+  [userId],
+);
+
+export const registerLoginFailure = async (userId, maxAttempts, lockMinutes) => {
+  const row = (
+    await query(
+      `UPDATE electronica_az.usuario
+       SET intentos_fallidos = intentos_fallidos + 1,
+           bloqueado_hasta = CASE
+             WHEN intentos_fallidos + 1 >= $2
+               THEN CURRENT_TIMESTAMP + ($3::text || ' minutes')::interval
+             ELSE bloqueado_hasta
+           END
+       WHERE id_usuario = $1
+       RETURNING intentos_fallidos, bloqueado_hasta`,
+      [userId, maxAttempts, String(lockMinutes)],
+    )
+  ).rows[0];
+  return row;
+};
+
+export const findUserByEmail = async (email) => (
+  await query(`
+    ${userAuthSelect}
+    WHERE lower(u.correo) = lower($1)
+    GROUP BY u.id_usuario
+  `, [email])
+).rows[0];
+
+export const createRecoveryToken = (userId, tokenHash, expiresAt) => query(
+  `INSERT INTO electronica_az.token_recuperacion(token_hash, expira_en, id_usuario)
+   VALUES ($1, $2, $3)
+   RETURNING id_token, expira_en`,
+  [tokenHash, expiresAt, userId],
+);
+
+export const findValidRecoveryToken = async (tokenHash) => (
+  await query(
+    `SELECT t.id_token, t.id_usuario, t.expira_en, u.activo
+     FROM electronica_az.token_recuperacion t
+     JOIN electronica_az.usuario u ON u.id_usuario = t.id_usuario
+     WHERE t.token_hash = $1
+       AND t.usado_en IS NULL
+       AND t.expira_en > CURRENT_TIMESTAMP`,
+    [tokenHash],
+  )
+).rows[0];
+
+export const markRecoveryTokenUsed = (tokenId) => query(
+  `UPDATE electronica_az.token_recuperacion
+   SET usado_en = CURRENT_TIMESTAMP
+   WHERE id_token = $1 AND usado_en IS NULL`,
+  [tokenId],
+);
+
+export const revokeAllUserSessions = (userId) => query(
+  `UPDATE electronica_az.sesion_usuario
+   SET revocada_en = CURRENT_TIMESTAMP
+   WHERE id_usuario = $1 AND revocada_en IS NULL`,
+  [userId],
 );
 
 export const createClientAccount = (data, passwordHash) => withTransaction(async (client) => {

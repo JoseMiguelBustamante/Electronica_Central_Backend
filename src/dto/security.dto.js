@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { passwordPolicySchema } from '../utils/passwordPolicy.js';
 
 export const userIdDto = z.object({
   id: z.string().uuid(),
@@ -12,14 +13,15 @@ export const createClientDto = z.object({
 });
 
 export const resetUserDto = z.object({
-  contrasenaTemporal: z.string().min(12).max(128),
+  contrasenaTemporal: passwordPolicySchema,
 });
 
+/** Admin creates employees (staff). Clients self-register via /api/auth/registro. */
 export const createUserDto = z.object({
   nombreUsuario: z.string().trim().min(3).max(120),
   correo: z.string().trim().email().max(254),
-  contrasena: z.string().min(12).max(128),
-  roles: z.array(z.enum(['VENDEDOR', 'CLIENTE'])).min(1),
+  contrasena: passwordPolicySchema,
+  roles: z.array(z.enum(['VENDEDOR'])).min(1),
 });
 
 export const listLogDto = z.object({});

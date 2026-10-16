@@ -3,6 +3,7 @@ export const errorCodes = {
   INVALID_CREDENTIALS: 'AU001',
   SESSION_EXPIRED: 'AU002',
   MISSING_TOKEN: 'AU003',
+  ACCOUNT_LOCKED: 'AU004',
   ACCESS_DENIED: 'FB001',
   NOT_FOUND: 'NF001',
   CONFLICT: 'CF001',
@@ -12,21 +13,25 @@ export const errorCodes = {
 };
 
 export const errorCatalog = {
-  [errorCodes.VALIDATION_ERROR]: { statusHttp: 400, message: 'Invalid request data' },
-  [errorCodes.INVALID_CREDENTIALS]: { statusHttp: 401, message: 'Invalid credentials or session' },
-  [errorCodes.SESSION_EXPIRED]: { statusHttp: 401, message: 'Session expired' },
-  [errorCodes.MISSING_TOKEN]: { statusHttp: 401, message: 'Authentication required' },
-  [errorCodes.ACCESS_DENIED]: { statusHttp: 403, message: 'Access denied' },
-  [errorCodes.NOT_FOUND]: { statusHttp: 404, message: 'Resource not found' },
-  [errorCodes.CONFLICT]: { statusHttp: 409, message: 'Resource conflict' },
-  [errorCodes.BUSINESS_RULE]: { statusHttp: 422, message: 'Business rule cannot be satisfied' },
+  [errorCodes.VALIDATION_ERROR]: { statusHttp: 400, message: 'Datos de solicitud inválidos' },
+  [errorCodes.INVALID_CREDENTIALS]: { statusHttp: 401, message: 'Credenciales o sesión inválidas' },
+  [errorCodes.SESSION_EXPIRED]: { statusHttp: 401, message: 'Sesión expirada' },
+  [errorCodes.MISSING_TOKEN]: { statusHttp: 401, message: 'Autenticación requerida' },
+  [errorCodes.ACCOUNT_LOCKED]: {
+    statusHttp: 423,
+    message: 'Cuenta bloqueada por demasiados intentos fallidos. Espere 15 minutos.',
+  },
+  [errorCodes.ACCESS_DENIED]: { statusHttp: 403, message: 'Acceso denegado' },
+  [errorCodes.NOT_FOUND]: { statusHttp: 404, message: 'Recurso no encontrado' },
+  [errorCodes.CONFLICT]: { statusHttp: 409, message: 'Conflicto de recurso' },
+  [errorCodes.BUSINESS_RULE]: { statusHttp: 422, message: 'No se puede cumplir la regla de negocio' },
   [errorCodes.INTERNAL_ERROR]: {
     statusHttp: 500,
-    message: 'Internal server error',
+    message: 'Error interno del servidor',
   },
   [errorCodes.SERVICE_UNAVAILABLE]: {
     statusHttp: 503,
-    message: 'Service unavailable',
+    message: 'Servicio no disponible',
   },
 };
 

@@ -30,6 +30,12 @@ export const listClientsService = listClients;
 export const listUsersService = listUsers;
 
 export const createUserService = async (data, actor) => {
+  // Employees only (VENDEDOR). Clients self-register via /api/auth/registro.
+  if (data.roles.some((role) => role === 'CLIENTE')) {
+    throw new AppError(errorCodes.VALIDATION_ERROR, 400, {
+      message: 'Los clientes se registran solos. Acá solo se dan de alta empleados (vendedor).',
+    });
+  }
   try {
     const user = await createUser(
       data.nombreUsuario,
