@@ -5,6 +5,8 @@ node_modules
 .env.*
 coverage
 test
-docs
 *.md
 odd
+# Keep docs/openapi.yaml in the image (startup reads it for /docs).
+docs/**
+!docs/openapi.yaml
