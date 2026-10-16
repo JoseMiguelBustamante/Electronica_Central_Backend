@@ -10,7 +10,8 @@ services:
       POSTGRES_DB: mi_base_datos
 
     ports:
-      - "5432:5432"
+      # Local/VPS only — do not expose Postgres on the public interface
+      - "127.0.0.1:5432:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data

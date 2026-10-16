@@ -51,9 +51,16 @@ Fuente: `docs/2026 INTEGRADOS y ARDUINO.xlsx`
 
 Detalle: `scripts/seed/README.md`.
 
+## Docs de requisitos
+
+- Perfil académico Ciclo 2: `docs/PerfilGrupo14_2doCiclo.docx`
+- Verificación operacional vs Ciclo 2: `docs/ciclo-2-verificacion.md`
+
 ## Checklist
 
 - [ ] `.env` listo (no se sube a git)
 - [ ] Migraciones aplicadas
 - [ ] `bootstrap:security`
+- [ ] Seed Excel (opcional pero requerido para catálogo de negocio)
 - [ ] API arriba y login admin OK
+- [ ] Revisar `docs/ciclo-2-verificacion.md`
