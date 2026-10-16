@@ -11,6 +11,7 @@ import {
   findValidRecoveryToken,
   markRecoveryTokenUsed,
   registerLoginFailure,
+  resetAttemptsAfterLockExpired,
   revokeAllUserSessions,
   revokeSession,
   setPasswordChangeRequired,
@@ -24,8 +25,15 @@ import { hashPassword, verifyPassword } from '../utils/password.js';
 import { createSessionToken, hashToken } from '../utils/token.js';
 
 const MAX_LOGIN_ATTEMPTS = 3;
-const LOCK_MINUTES = 15;
+/** First lock lasts 2 minutes; each later lock cycle doubles (2 → 4 → 8 …). */
+const LOCK_BASE_MINUTES = 2;
+const LOCK_MAX_MINUTES = 60;
 const RECOVERY_HOURS = 1;
+
+const lockMinutesForNextNivel = (nivelActual) => Math.min(
+  LOCK_BASE_MINUTES * (2 ** Math.max(0, nivelActual)),
+  LOCK_MAX_MINUTES,
+);
 
 const safeUser = (user) => ({
   id: user.id_usuario,
@@ -49,18 +57,28 @@ const isLocked = (user) => {
   return new Date(user.bloqueado_hasta).getTime() > Date.now();
 };
 
-const throwLocked = (user) => {
+const throwLocked = (user, minutosBloqueo) => {
   throw new AppError(errorCodes.ACCOUNT_LOCKED, 423, {
+    message: `Cuenta bloqueada por demasiados intentos fallidos. Espere ${minutosBloqueo} minuto(s).`,
     bloqueadoHasta: user.bloqueado_hasta,
     intentosMaximos: MAX_LOGIN_ATTEMPTS,
+    minutosBloqueo,
+    nivelBloqueo: user.nivel_bloqueo ?? 0,
   });
 };
 
 export const loginAuthService = async ({ identificador, contrasena }) => {
-  const user = await findUserForLogin(identificador);
+  let user = await findUserForLogin(identificador);
 
   if (user && isLocked(user)) {
-    throwLocked(user);
+    const minutos = lockMinutesForNextNivel(Math.max(0, (user.nivel_bloqueo ?? 1) - 1));
+    throwLocked(user, minutos);
+  }
+
+  // Lock window expired: fresh 3 attempts, but keep escalating nivel on the next lock.
+  if (user?.bloqueado_hasta && !isLocked(user) && (user.intentos_fallidos ?? 0) > 0) {
+    await resetAttemptsAfterLockExpired(user.id_usuario);
+    user = { ...user, intentos_fallidos: 0, bloqueado_hasta: null };
   }
 
   const passwordOk = user && user.activo
@@ -69,12 +87,16 @@ export const loginAuthService = async ({ identificador, contrasena }) => {
 
   if (!user || !user.activo || !passwordOk) {
     if (user && user.activo) {
-      const updated = await registerLoginFailure(user.id_usuario, MAX_LOGIN_ATTEMPTS, LOCK_MINUTES);
+      const minutos = lockMinutesForNextNivel(user.nivel_bloqueo ?? 0);
+      const updated = await registerLoginFailure(user.id_usuario, MAX_LOGIN_ATTEMPTS, minutos);
       if (updated && updated.intentos_fallidos >= MAX_LOGIN_ATTEMPTS) {
         throw new AppError(errorCodes.ACCOUNT_LOCKED, 423, {
+          message: `Cuenta bloqueada por demasiados intentos fallidos. Espere ${minutos} minuto(s).`,
           bloqueadoHasta: updated.bloqueado_hasta,
           intentosMaximos: MAX_LOGIN_ATTEMPTS,
           intentosFallidos: updated.intentos_fallidos,
+          minutosBloqueo: minutos,
+          nivelBloqueo: updated.nivel_bloqueo,
         });
       }
       throw new AppError(errorCodes.INVALID_CREDENTIALS, 401, {

@@ -74,12 +74,48 @@ describe('auth flow with PostgreSQL', () => {
     });
     expect(fail3.status).toBe(423);
     expect(fail3.body.error.code).toBe('AU004');
+    expect(fail3.body.error.details.minutosBloqueo).toBe(2);
+    expect(fail3.body.error.details.nivelBloqueo).toBe(1);
 
     const whileLocked = await request(app).post('/api/auth/login').send({
       identificador: local.correo,
       contrasena: localPassword,
     });
     expect(whileLocked.status).toBe(423);
+    expect(whileLocked.body.error.details.minutosBloqueo).toBe(2);
+
+    // Expire lock window: next cycle should double to 4 minutes.
+    const { default: pg } = await import('pg');
+    const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+    await client.query(
+      `UPDATE electronica_az.usuario
+       SET bloqueado_hasta = CURRENT_TIMESTAMP - interval '1 second'
+       WHERE lower(correo) = lower($1)`,
+      [local.correo],
+    );
+    await client.end();
+
+    const fail4 = await request(app).post('/api/auth/login').send({
+      identificador: local.correo,
+      contrasena: 'ClaveIncorrecta123',
+    });
+    expect(fail4.status).toBe(401);
+    expect(fail4.body.error.details.intentosRestantes).toBe(2);
+
+    const fail5 = await request(app).post('/api/auth/login').send({
+      identificador: local.correo,
+      contrasena: 'ClaveIncorrecta123',
+    });
+    expect(fail5.status).toBe(401);
+
+    const fail6 = await request(app).post('/api/auth/login').send({
+      identificador: local.correo,
+      contrasena: 'ClaveIncorrecta123',
+    });
+    expect(fail6.status).toBe(423);
+    expect(fail6.body.error.details.minutosBloqueo).toBe(4);
+    expect(fail6.body.error.details.nivelBloqueo).toBe(2);
 
     const recover = await request(app).post('/api/auth/recuperar').send({ correo: local.correo });
     expect(recover.status).toBe(200);

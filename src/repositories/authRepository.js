@@ -10,6 +10,7 @@ const userAuthSelect = `
     u.cambio_contrasena_obligatorio,
     u.intentos_fallidos,
     u.bloqueado_hasta,
+    u.nivel_bloqueo,
     COALESCE(array_agg(DISTINCT r.nombre) FILTER (WHERE r.nombre IS NOT NULL), '{}') AS roles,
     COALESCE(array_agg(DISTINCT p.codigo) FILTER (WHERE p.codigo IS NOT NULL), '{}') AS permisos
   FROM electronica_az.usuario u
@@ -92,23 +93,39 @@ export const setPasswordChangeRequired = (userId, required) => query(
 
 export const clearLoginFailures = (userId) => query(
   `UPDATE electronica_az.usuario
+   SET intentos_fallidos = 0, bloqueado_hasta = NULL, nivel_bloqueo = 0
+   WHERE id_usuario = $1`,
+  [userId],
+);
+
+/** After a lock window expires, allow a fresh 3-attempt window but keep nivel_bloqueo. */
+export const resetAttemptsAfterLockExpired = (userId) => query(
+  `UPDATE electronica_az.usuario
    SET intentos_fallidos = 0, bloqueado_hasta = NULL
    WHERE id_usuario = $1`,
   [userId],
 );
 
+/**
+ * Increment failed attempts. When max is reached, apply lockMinutes and bump nivel_bloqueo.
+ * @returns {{ intentos_fallidos: number, bloqueado_hasta: Date|null, nivel_bloqueo: number }}
+ */
 export const registerLoginFailure = async (userId, maxAttempts, lockMinutes) => {
   const row = (
     await query(
       `UPDATE electronica_az.usuario
        SET intentos_fallidos = intentos_fallidos + 1,
+           nivel_bloqueo = CASE
+             WHEN intentos_fallidos + 1 >= $2 THEN nivel_bloqueo + 1
+             ELSE nivel_bloqueo
+           END,
            bloqueado_hasta = CASE
              WHEN intentos_fallidos + 1 >= $2
                THEN CURRENT_TIMESTAMP + ($3::text || ' minutes')::interval
              ELSE bloqueado_hasta
            END
        WHERE id_usuario = $1
-       RETURNING intentos_fallidos, bloqueado_hasta`,
+       RETURNING intentos_fallidos, bloqueado_hasta, nivel_bloqueo`,
       [userId, maxAttempts, String(lockMinutes)],
     )
   ).rows[0];

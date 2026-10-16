@@ -19,7 +19,7 @@ export const errorCatalog = {
   [errorCodes.MISSING_TOKEN]: { statusHttp: 401, message: 'Autenticación requerida' },
   [errorCodes.ACCOUNT_LOCKED]: {
     statusHttp: 423,
-    message: 'Cuenta bloqueada por demasiados intentos fallidos. Espere 15 minutos.',
+    message: 'Cuenta bloqueada por demasiados intentos fallidos. Espere unos minutos.',
   },
   [errorCodes.ACCESS_DENIED]: { statusHttp: 403, message: 'Acceso denegado' },
   [errorCodes.NOT_FOUND]: { statusHttp: 404, message: 'Recurso no encontrado' },
