@@ -5,7 +5,17 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z.string().url().optional(),
   DATABASE_SSL: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
-  FRONTEND_ORIGIN: z.string().url().default('http://localhost:5173'),
+  /** One origin, or comma-separated list (e.g. public IP + Dokploy sslip host). */
+  FRONTEND_ORIGIN: z
+    .string()
+    .default('http://localhost:5173')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.string().url()).min(1)),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -15,4 +25,10 @@ if (!parsed.success) {
   throw new Error('Invalid environment configuration');
 }
 
-export const env = parsed.data;
+export const env = {
+  ...parsed.data,
+  /** Allowed browser origins for CORS. */
+  FRONTEND_ORIGINS: parsed.data.FRONTEND_ORIGIN,
+  /** Primary origin (first entry) for links / redirects. */
+  FRONTEND_ORIGIN: parsed.data.FRONTEND_ORIGIN[0],
+};
