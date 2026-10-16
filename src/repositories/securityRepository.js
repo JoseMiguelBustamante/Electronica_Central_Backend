@@ -1,4 +1,4 @@
-import { query } from '../lib/database.js';
+import { query, withTransaction } from '../lib/database.js';
 
 export const createClient = async (data) => (
   await query(
@@ -71,13 +71,36 @@ export const revokeUserSessions = async (id) => query(
   [id],
 );
 
-export const addLog = async (action, object, result, userId) => query(
-  `INSERT INTO electronica_az.registro_bitacora(accion, objeto_afectado, resultado, id_usuario)
-   VALUES ($1, $2, $3, $4)`,
-  [action, object, result, userId],
+export const addLog = async (action, object, result, userId, { ip = null, tabla = null } = {}) => query(
+  `INSERT INTO electronica_az.registro_bitacora(accion, objeto_afectado, resultado, id_usuario, direccion_ip, tabla_afectada)
+   VALUES ($1, $2, $3, $4, $5::inet, $6)`,
+  [action, object, result, userId, ip, tabla],
 );
 
-export const listLogs = async () => (
+export const updateUser = async (id, { nombreUsuario, correo, activo, roles }) => withTransaction(async (client) => {
+  const user = (
+    await client.query(
+      `UPDATE electronica_az.usuario
+       SET nombre_usuario = COALESCE($2, nombre_usuario),
+           correo = COALESCE($3, correo),
+           activo = COALESCE($4, activo)
+       WHERE id_usuario = $1
+       RETURNING id_usuario, nombre_usuario, correo, activo`,
+      [id, nombreUsuario ?? null, correo ?? null, activo ?? null],
+    )
+  ).rows[0];
+  if (user && roles) {
+    await client.query('DELETE FROM electronica_az.usuario_rol WHERE id_usuario = $1', [id]);
+    await client.query(
+      `INSERT INTO electronica_az.usuario_rol(id_usuario, id_rol)
+       SELECT $1, id_rol FROM electronica_az.rol WHERE nombre = ANY($2)`,
+      [id, roles],
+    );
+  }
+  return user;
+});
+
+export const listLogs = async ({ desde, hasta, usuario, accion, tabla, limite }) => (
   await query(
     `SELECT
        b.id_registro,
@@ -86,6 +109,8 @@ export const listLogs = async () => (
        b.objeto_afectado,
        b.resultado,
        b.id_usuario,
+       host(b.direccion_ip) AS direccion_ip,
+       b.tabla_afectada,
        COALESCE(
          NULLIF(btrim(actor.nombre_usuario), ''),
          NULLIF(btrim(actor.correo), ''),
@@ -102,6 +127,13 @@ export const listLogs = async () => (
      LEFT JOIN electronica_az.usuario actor ON actor.id_usuario = b.id_usuario
      LEFT JOIN electronica_az.cliente cliente ON cliente.id_cliente::text = b.objeto_afectado
      LEFT JOIN electronica_az.usuario afectado ON afectado.id_usuario::text = b.objeto_afectado
-     ORDER BY b.fecha_hora DESC`,
+     WHERE ($1::date IS NULL OR b.fecha_hora >= ($1::date::timestamp AT TIME ZONE 'America/La_Paz'))
+       AND ($2::date IS NULL OR b.fecha_hora < (($2::date + 1)::timestamp AT TIME ZONE 'America/La_Paz'))
+       AND ($3::text IS NULL OR actor.nombre_usuario ILIKE '%' || $3 || '%' OR actor.correo ILIKE '%' || $3 || '%')
+       AND ($4::text IS NULL OR b.accion = $4)
+       AND ($5::text IS NULL OR b.tabla_afectada = $5)
+     ORDER BY b.fecha_hora DESC
+     LIMIT $6`,
+    [desde ?? null, hasta ?? null, usuario ?? null, accion ?? null, tabla ?? null, limite],
   )
 ).rows;

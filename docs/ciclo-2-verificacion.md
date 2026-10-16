@@ -22,13 +22,32 @@ Fecha de verificación: 2026-10-15.
 
 ## Estado actual
 
-| CU | Backend (API) | Frontend (UI) | Evidencia | Cumple |
-|----|---------------|---------------|-----------|--------|
-| CU-9 Compatibilidad | `POST/DELETE /api/productos/:id/compatibilidades` | `/compatibilidades` (+ Marcas/Modelos) | UI wired 2026-10-16; necesita marcas/modelos creados | OK (datos base a cargar) |
-| CU-11 Inventario | `GET /api/inventario`, ajustes, mínimo | `/inventario` | UI wired 2026-10-16 | OK |
-| CU-12 Proveedores | `GET/POST /api/proveedores` | `/proveedores` | UI wired 2026-10-16 | OK |
-| CU-13 Compras | `GET/POST /api/compras`, recibir/cancelar | `/compras` | UI wired 2026-10-16 | OK |
-| CU-3 Bitácora | `GET /api/bitacora` | `/bitacora` | Ya existía | OK |
+Verificado 2026-10-16 con tests de integración (`test/integration/ciclo1-ciclo2.flow.test.js`) sobre una base local migrada 001→015.
+
+### Ciclo 1
+
+| CU | Backend (API) | Frontend (UI) | Cumple |
+|----|---------------|---------------|--------|
+| CU-1 Iniciar sesión | `POST /api/auth/login` (cuenta ACTIVA, error genérico) + bitácora `INICIO_SESION` con IP | `/login` | OK |
+| CU-2 Usuarios y roles | `GET/POST /api/usuarios`, `PATCH /api/usuarios/:id` (editar, rol ADMINISTRADOR/VENDEDOR, activar/desactivar) | `/usuarios` | OK |
+| CU-4 Productos | `GET /api/productos` (incluye inactivos), `POST`, `PATCH /api/productos/:id` (edición completa, precio de compra, margen, reactivar) | `/productos` | OK |
+| CU-5 Categorías | `GET/POST`, `PATCH/DELETE /api/categorias/:id` (409 si está en uso) | `/categorias` | OK |
+| CU-6 Marcas | `GET/POST`, `PATCH/DELETE /api/marcas/:id` | `/marcas` | OK |
+| CU-7 Modelos | `GET/POST`, `PATCH/DELETE /api/modelos/:id` (único por marca) | `/modelos` | OK |
+| CU-8 Unidades | `GET/POST`, `PATCH/DELETE /api/unidades/:id` (abreviatura única) | `/unidades` | OK |
+| CU-10 Buscar productos | `GET /api/catalogo/productos` (filtro por modelo usa COMPATIBILIDAD), detalle con compatibilidades | Catálogo público | OK* |
+
+\* El catálogo público muestra disponibilidad, no el stock exacto ni la ubicación (decisión de seguridad); el vendedor los ve en `/inventario`.
+
+### Ciclo 2
+
+| CU | Backend (API) | Frontend (UI) | Cumple |
+|----|---------------|---------------|--------|
+| CU-9 Compatibilidad | `GET/POST/DELETE /api/productos/:id/compatibilidades` (409 si se repite) | `/compatibilidades` | OK |
+| CU-11 Inventario | `GET /api/inventario`, ajustes ENTRADA/SALIDA, mínimo, movimientos | `/inventario` | OK |
+| CU-12 Proveedores | `GET/POST/PATCH /api/proveedores` | `/proveedores` | OK |
+| CU-13 Compras | `POST /api/compras` con `numeroComprobante` obligatorio y único (409), recibir → ENTRADA | `/compras` | OK |
+| CU-3 Bitácora | `GET /api/bitacora?desde&hasta&usuario&accion&tabla`, guarda IP y tabla afectada | `/bitacora` | OK |
 
 ### Datos cargados (negocio Excel)
 
@@ -42,10 +61,10 @@ Fecha de verificación: 2026-10-15.
 
 ## Gaps restantes
 
-1. **CU-9 usable:** crear marcas/modelos en UI antes de asociar compatibilidades (el Excel no las trae).
-2. **Stock real:** Excel deja `stock_actual = 0`; usar ajustes de inventario o apertura para demo de disponibilidad.
-3. **Stack del perfil vs implementación:** el documento académico menciona Laravel/Vue; el sistema es **Node/Express + React/Vite + PostgreSQL**.
-4. **Pasarela QR real / HTTPS:** el UI permite método QR + referencia; integración externa y TLS del perfil siguen pendientes.
+1. **Datos de demo:** el Excel no trae marcas ni modelos; cargar algunos para demostrar CU-7 y CU-9.
+2. **Stack del perfil vs implementación:** el documento académico menciona Laravel/Vue; el sistema es **Node/Express + React/Vite + PostgreSQL**.
+3. **Almacén (CU-4):** el perfil menciona "almacén"; se cubre con la ubicación física (caja / pasillo / estante).
+4. **Pasarela QR real / HTTPS:** fuera del alcance de los ciclos 1 y 2.
 
 ## Evidencia (comandos)
 
@@ -57,7 +76,7 @@ curl -sS http://127.0.0.1:3001/ready
 # Login
 curl -sS -X POST http://127.0.0.1:3001/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"identificador":"admin","contrasena":"change-this-admin-password"}'
+  -d "{\"identificador\":\"admin\",\"contrasena\":\"$ADMIN_PASSWORD\"}"
 
 # Ciclo 2 (usar Bearer token del login)
 curl -sS -H "Authorization: Bearer $TOKEN" 'http://127.0.0.1:3001/api/inventario?limite=1'
@@ -74,10 +93,11 @@ Catálogo público (sin login): `http://187.127.19.244/`
 - [x] Perfil Ciclo 2 archivado en el repo (`docs/PerfilGrupo14_2doCiclo.docx`)
 - [x] Migraciones + bootstrap + seed Excel aplicados
 - [x] API Ciclo 2 responde (inventario, proveedores, compras, bitácora)
-- [ ] UI Ciclo 2 completa en el frontend
+- [x] UI Ciclo 1 y 2 completa en el frontend
+- [x] Migración `015_ciclo1_ciclo2_gaps.sql` (precio de compra, margen, comprobante, tabla en bitácora)
 - [ ] Compatibilidades con datos de marca/modelo
-- [ ] Stock distinto de cero para demo de disponibilidad
+- [ ] Contraseña del admin cambiada en producción
 
 ## Next step
 
-Implementar las pantallas de Inventario / Proveedores / Compras en el frontend y conectarlas a la API ya verificada.
+Cargar marcas/modelos de demo y ensayar CU-9 y CU-10 de punta a punta.

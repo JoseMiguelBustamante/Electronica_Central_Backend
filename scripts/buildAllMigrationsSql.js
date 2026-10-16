@@ -1,5 +1,5 @@
 /**
- * Concatena backend/scripts/migrations/001..010 en un solo SQL.
+ * Concatena todas las migraciones de scripts/migrations en un solo SQL.
  * Salida: docs/db/electronica_az_all_migrations.sql
  *
  * Uso: node scripts/buildAllMigrationsSql.js
@@ -22,7 +22,7 @@ if (files.length === 0) {
 }
 
 const header = `-- =============================================================================
--- Electrónica Central AZ — esquema completo (migraciones 001 → 010)
+-- Electrónica Central AZ — esquema completo (migraciones ${files[0].slice(0, 3)} → ${files[files.length - 1].slice(0, 3)})
 -- =============================================================================
 -- Generado automáticamente. No editar a mano: regenerar con:
 --   cd backend && npm run db:bundle

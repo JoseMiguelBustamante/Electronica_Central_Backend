@@ -122,6 +122,42 @@ export const endpoints = [
     },
   },
   {
+    method: 'patch', path: '/api/categorias/{id}', operationId: 'updateCategoria', summary: 'Editar categoría', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    pathParams: ['id'],
+    body: { type: 'object', properties: { nombre: { type: 'string' }, descripcion: { type: 'string' } } },
+  },
+  {
+    method: 'delete', path: '/api/categorias/{id}', operationId: 'deleteCategoria', summary: 'Eliminar categoría (409 si está en uso)', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    pathParams: ['id'],
+  },
+  {
+    method: 'patch', path: '/api/marcas/{id}', operationId: 'updateMarca', summary: 'Editar marca', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    pathParams: ['id'],
+    body: { type: 'object', properties: { nombre: { type: 'string' } } },
+  },
+  {
+    method: 'delete', path: '/api/marcas/{id}', operationId: 'deleteMarca', summary: 'Eliminar marca (409 si está en uso)', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    pathParams: ['id'],
+  },
+  {
+    method: 'patch', path: '/api/unidades/{id}', operationId: 'updateUnidad', summary: 'Editar unidad de medida', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    pathParams: ['id'],
+    body: { type: 'object', properties: { nombre: { type: 'string' }, simbolo: { type: 'string' }, permiteFraccion: { type: 'boolean' } } },
+  },
+  {
+    method: 'delete', path: '/api/unidades/{id}', operationId: 'deleteUnidad', summary: 'Eliminar unidad de medida (409 si está en uso)', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    pathParams: ['id'],
+  },
+  {
+    method: 'patch', path: '/api/modelos/{id}', operationId: 'updateModelo', summary: 'Editar modelo', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    pathParams: ['id'],
+    body: { type: 'object', properties: { nombre: { type: 'string' }, descripcion: { type: 'string' }, idMarca: { type: 'string', format: 'uuid' } } },
+  },
+  {
+    method: 'delete', path: '/api/modelos/{id}', operationId: 'deleteModelo', summary: 'Eliminar modelo (409 si está en uso)', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    pathParams: ['id'],
+  },
+  {
     method: 'post', path: '/api/productos', operationId: 'createProducto', summary: 'Crear producto', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
     body: {
       type: 'object',
@@ -131,6 +167,8 @@ export const endpoints = [
         nombre: { type: 'string' },
         descripcion: { type: 'string' },
         precioVenta: { type: 'number' },
+        precioCompra: { type: 'number', default: 0 },
+        margenGanancia: { type: 'number', default: 0, description: 'Porcentaje' },
         idCategoria: { type: 'string', format: 'uuid' },
         idUnidadMedida: { type: 'string', format: 'uuid' },
         idUbicacion: { type: 'string', format: 'uuid' },
@@ -141,9 +179,40 @@ export const endpoints = [
     },
   },
   {
-    method: 'patch', path: '/api/productos/{id}', operationId: 'deactivateProducto', summary: 'Desactivar producto', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    method: 'get', path: '/api/productos', operationId: 'listProductosAdmin', summary: 'Listar productos (admin, incluye inactivos)', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    query: {
+      buscar: { type: 'string' },
+      idCategoria: { type: 'string', format: 'uuid' },
+      estado: { type: 'string', enum: ['activos', 'inactivos', 'todos'] },
+      pagina: { type: 'integer' },
+      limite: { type: 'integer' },
+    },
+  },
+  {
+    method: 'patch', path: '/api/productos/{id}', operationId: 'updateProducto', summary: 'Editar, desactivar o reactivar producto', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
     pathParams: ['id'],
-    body: { type: 'object', required: ['activo'], properties: { activo: { type: 'boolean', enum: [false] } } },
+    body: {
+      type: 'object',
+      properties: {
+        codigo: { type: 'string' },
+        nombre: { type: 'string' },
+        descripcion: { type: 'string', nullable: true },
+        precioVenta: { type: 'number' },
+        precioCompra: { type: 'number' },
+        margenGanancia: { type: 'number' },
+        idCategoria: { type: 'string', format: 'uuid' },
+        idUnidadMedida: { type: 'string', format: 'uuid' },
+        idUbicacion: { type: 'string', format: 'uuid' },
+        idMarca: { type: 'string', format: 'uuid', nullable: true },
+        idModelo: { type: 'string', format: 'uuid', nullable: true },
+        stockMinimo: { type: 'number' },
+        activo: { type: 'boolean' },
+      },
+    },
+  },
+  {
+    method: 'get', path: '/api/productos/{id}/compatibilidades', operationId: 'listCompatibilidades', summary: 'Modelos compatibles del producto', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
+    pathParams: ['id'],
   },
   {
     method: 'post', path: '/api/productos/{id}/compatibilidades', operationId: 'createCompatibilidad', summary: 'Alta compatibilidad', tags: ['Catalogo'], auth: 'CATALOGO_GESTIONAR',
@@ -170,7 +239,20 @@ export const endpoints = [
         nombreUsuario: { type: 'string' },
         correo: { type: 'string', format: 'email' },
         contrasena: { type: 'string', minLength: 12 },
-        roles: { type: 'array', items: { type: 'string', enum: ['VENDEDOR', 'CLIENTE'] } },
+        roles: { type: 'array', items: { type: 'string', enum: ['ADMINISTRADOR', 'VENDEDOR'] } },
+      },
+    },
+  },
+  {
+    method: 'patch', path: '/api/usuarios/{id}', operationId: 'updateUsuario', summary: 'Editar, activar o desactivar usuario', tags: ['Seguridad'], auth: 'USUARIOS_GESTIONAR',
+    pathParams: ['id'],
+    body: {
+      type: 'object',
+      properties: {
+        nombreUsuario: { type: 'string' },
+        correo: { type: 'string', format: 'email' },
+        activo: { type: 'boolean' },
+        roles: { type: 'array', items: { type: 'string', enum: ['ADMINISTRADOR', 'VENDEDOR'] } },
       },
     },
   },
@@ -197,7 +279,17 @@ export const endpoints = [
       },
     },
   },
-  { method: 'get', path: '/api/bitacora', operationId: 'listBitacora', summary: 'Consultar bitácora', tags: ['Seguridad'], auth: 'BITACORA_CONSULTAR' },
+  {
+    method: 'get', path: '/api/bitacora', operationId: 'listBitacora', summary: 'Consultar bitácora', tags: ['Seguridad'], auth: 'BITACORA_CONSULTAR',
+    query: {
+      desde: { type: 'string', format: 'date' },
+      hasta: { type: 'string', format: 'date' },
+      usuario: { type: 'string' },
+      accion: { type: 'string' },
+      tabla: { type: 'string' },
+      limite: { type: 'integer', maximum: 2000 },
+    },
+  },
 
   // Inventario
   {
@@ -335,9 +427,10 @@ export const endpoints = [
     method: 'post', path: '/api/compras', operationId: 'createCompra', summary: 'Crear compra', tags: ['Compras'], auth: 'COMPRAS_GESTIONAR',
     body: {
       type: 'object',
-      required: ['idProveedor', 'detalles'],
+      required: ['idProveedor', 'numeroComprobante', 'detalles'],
       properties: {
         idProveedor: { type: 'string', format: 'uuid' },
+        numeroComprobante: { type: 'string', description: 'Único por compra' },
         fecha: { type: 'string', format: 'date-time' },
         detalles: {
           type: 'array',
@@ -363,9 +456,10 @@ export const endpoints = [
     pathParams: ['id'],
     body: {
       type: 'object',
-      required: ['idProveedor', 'detalles'],
+      required: ['idProveedor', 'numeroComprobante', 'detalles'],
       properties: {
         idProveedor: { type: 'string', format: 'uuid' },
+        numeroComprobante: { type: 'string', description: 'Único por compra' },
         fecha: { type: 'string', format: 'date-time' },
         detalles: {
           type: 'array',

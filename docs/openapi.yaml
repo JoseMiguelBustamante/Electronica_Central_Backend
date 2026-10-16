@@ -566,6 +566,310 @@ paths:
               nombre: ejemplo-nombre
               descripcion: ejemplo-descripcion
               idMarca: "{{idMarca}}"
+  /api/categorias/{id}:
+    patch:
+      operationId: updateCategoria
+      summary: Editar categoría
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+                descripcion:
+                  type: string
+            example:
+              nombre: ejemplo-nombre
+              descripcion: ejemplo-descripcion
+    delete:
+      operationId: deleteCategoria
+      summary: Eliminar categoría (409 si está en uso)
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+  /api/marcas/{id}:
+    patch:
+      operationId: updateMarca
+      summary: Editar marca
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+            example:
+              nombre: ejemplo-nombre
+    delete:
+      operationId: deleteMarca
+      summary: Eliminar marca (409 si está en uso)
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+  /api/unidades/{id}:
+    patch:
+      operationId: updateUnidad
+      summary: Editar unidad de medida
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+                simbolo:
+                  type: string
+                permiteFraccion:
+                  type: boolean
+            example:
+              nombre: ejemplo-nombre
+              simbolo: ejemplo-simbolo
+              permiteFraccion: true
+    delete:
+      operationId: deleteUnidad
+      summary: Eliminar unidad de medida (409 si está en uso)
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+  /api/modelos/{id}:
+    patch:
+      operationId: updateModelo
+      summary: Editar modelo
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+                descripcion:
+                  type: string
+                idMarca:
+                  type: string
+                  format: uuid
+            example:
+              nombre: ejemplo-nombre
+              descripcion: ejemplo-descripcion
+              idMarca: "{{idMarca}}"
+    delete:
+      operationId: deleteModelo
+      summary: Eliminar modelo (409 si está en uso)
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
   /api/productos:
     post:
       operationId: createProducto
@@ -612,6 +916,13 @@ paths:
                   type: string
                 precioVenta:
                   type: number
+                precioCompra:
+                  type: number
+                  default: 0
+                margenGanancia:
+                  type: number
+                  default: 0
+                  description: Porcentaje
                 idCategoria:
                   type: string
                   format: uuid
@@ -635,16 +946,72 @@ paths:
               nombre: ejemplo-nombre
               descripcion: ejemplo-descripcion
               precioVenta: 1
+              precioCompra: 0
+              margenGanancia: 0
               idCategoria: "{{idCategoria}}"
               idUnidadMedida: "{{idUnidadMedida}}"
               idUbicacion: "{{idUbicacion}}"
               idMarca: "{{idMarca}}"
               idModelo: "{{idModelo}}"
               stockMinimo: 0
+    get:
+      operationId: listProductosAdmin
+      summary: Listar productos (admin, incluye inactivos)
+      tags:
+        - Catalogo
+      parameters:
+        - name: buscar
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: idCategoria
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - activos
+              - inactivos
+              - todos
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
   /api/productos/{id}:
     patch:
-      operationId: deactivateProducto
-      summary: Desactivar producto
+      operationId: updateProducto
+      summary: Editar, desactivar o reactivar producto
       tags:
         - Catalogo
       parameters:
@@ -678,16 +1045,86 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - activo
               properties:
+                codigo:
+                  type: string
+                nombre:
+                  type: string
+                descripcion:
+                  type: string
+                  nullable: true
+                precioVenta:
+                  type: number
+                precioCompra:
+                  type: number
+                margenGanancia:
+                  type: number
+                idCategoria:
+                  type: string
+                  format: uuid
+                idUnidadMedida:
+                  type: string
+                  format: uuid
+                idUbicacion:
+                  type: string
+                  format: uuid
+                idMarca:
+                  type: string
+                  format: uuid
+                  nullable: true
+                idModelo:
+                  type: string
+                  format: uuid
+                  nullable: true
+                stockMinimo:
+                  type: number
                 activo:
                   type: boolean
-                  enum:
-                    - false
             example:
-              activo: false
+              codigo: ejemplo-codigo
+              nombre: ejemplo-nombre
+              descripcion: ejemplo-descripcion
+              precioVenta: 1
+              precioCompra: 1
+              margenGanancia: 1
+              idCategoria: "{{idCategoria}}"
+              idUnidadMedida: "{{idUnidadMedida}}"
+              idUbicacion: "{{idUbicacion}}"
+              idMarca: "{{idMarca}}"
+              idModelo: "{{idModelo}}"
+              stockMinimo: 1
+              activo: true
   /api/productos/{id}/compatibilidades:
+    get:
+      operationId: listCompatibilidades
+      summary: Modelos compatibles del producto
+      tags:
+        - Catalogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `CATALOGO_GESTIONAR` (o roles Admin/Dev según seed).
     post:
       operationId: createCompatibilidad
       summary: Alta compatibilidad
@@ -844,12 +1281,69 @@ paths:
                   items:
                     type: string
                     enum:
+                      - ADMINISTRADOR
                       - VENDEDOR
-                      - CLIENTE
             example:
               nombreUsuario: ejemplo-nombreUsuario
               correo: demo@example.test
               contrasena: ClaveDePruebaSegura123
+              roles: []
+  /api/usuarios/{id}:
+    patch:
+      operationId: updateUsuario
+      summary: Editar, activar o desactivar usuario
+      tags:
+        - Seguridad
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "422":
+          description: Business rule
+      security:
+        - bearerAuth: []
+      description: Requiere permiso `USUARIOS_GESTIONAR` (o roles Admin/Dev según seed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombreUsuario:
+                  type: string
+                correo:
+                  type: string
+                  format: email
+                activo:
+                  type: boolean
+                roles:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - ADMINISTRADOR
+                      - VENDEDOR
+            example:
+              nombreUsuario: ejemplo-nombreUsuario
+              correo: demo@example.test
+              activo: true
               roles: []
   /api/usuarios/{id}/restablecer:
     post:
@@ -972,6 +1466,40 @@ paths:
       summary: Consultar bitácora
       tags:
         - Seguridad
+      parameters:
+        - name: desde
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: hasta
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: usuario
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: accion
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: tabla
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 2000
       responses:
         "200":
           description: OK
@@ -1594,11 +2122,15 @@ paths:
               type: object
               required:
                 - idProveedor
+                - numeroComprobante
                 - detalles
               properties:
                 idProveedor:
                   type: string
                   format: uuid
+                numeroComprobante:
+                  type: string
+                  description: Único por compra
                 fecha:
                   type: string
                   format: date-time
@@ -1620,7 +2152,8 @@ paths:
                         type: number
             example:
               idProveedor: "{{idProveedor}}"
-              fecha: 2026-09-25T21:41:59.996Z
+              numeroComprobante: ejemplo-numeroComprobante
+              fecha: 2026-10-16T03:56:01.145Z
               detalles:
                 - idProducto: "{{idProducto}}"
                   cantidad: 1
@@ -1694,11 +2227,15 @@ paths:
               type: object
               required:
                 - idProveedor
+                - numeroComprobante
                 - detalles
               properties:
                 idProveedor:
                   type: string
                   format: uuid
+                numeroComprobante:
+                  type: string
+                  description: Único por compra
                 fecha:
                   type: string
                   format: date-time
@@ -1720,7 +2257,8 @@ paths:
                         type: number
             example:
               idProveedor: "{{idProveedor}}"
-              fecha: 2026-09-25T21:41:59.996Z
+              numeroComprobante: ejemplo-numeroComprobante
+              fecha: 2026-10-16T03:56:01.145Z
               detalles:
                 - idProducto: "{{idProducto}}"
                   cantidad: 1

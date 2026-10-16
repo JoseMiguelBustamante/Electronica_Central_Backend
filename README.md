@@ -10,7 +10,9 @@ Repo: [Electronica_Central_Backend](https://github.com/JoseMiguelBustamante/Elec
 2. Aplicar esquema: ejecutar `db/electronica_az_all_migrations.sql` en DBeaver/psql.
 3. `npm run bootstrap:security`
 4. (Opcional) Seed Excel: `scripts/seed/01_cleanup_demo_data.sql` → `02_seed_from_excel.sql`
-5. `npm install && npm run dev` → `/api/health`, docs en `/api/docs`
+5. `npm install && npm run dev` → `/health`, docs en `/api/docs`
+
+Base ya existente: aplicar solo las migraciones nuevas de `scripts/migrations/` (la última es `015_ciclo1_ciclo2_gaps.sql`).
 
 ## Stack
 
@@ -24,9 +26,9 @@ Repo: [Electronica_Central_Backend](https://github.com/JoseMiguelBustamante/Elec
 ```
 .
 ├── src/                 # API (controllers, services, repositories, routes)
-├── scripts/migrations/  # 001 … 010
+├── scripts/migrations/  # 001 … 015
 ├── scripts/seed/        # cleanup + seed desde Excel
-├── db/                  # bundle SQL 001→010
+├── db/                  # bundle SQL 001→015
 ├── docs/                # openapi, postman, Excel de catálogo
 ├── test/                # unit + integration (Vitest)
 └── package.json

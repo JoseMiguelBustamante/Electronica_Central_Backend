@@ -36,14 +36,18 @@ export const listPurchasesQueryDto = z.object({
   limite: z.coerce.number().int().positive().max(100).default(20),
 });
 
+const numeroComprobanteDto = z.string().trim().min(1).max(120);
+
 export const createPurchaseDto = z.object({
   idProveedor: uuidDto,
+  numeroComprobante: numeroComprobanteDto,
   fecha: z.coerce.date().optional(),
   detalles: z.array(purchaseDetailDto).min(1),
 }).superRefine((data, ctx) => assertUniqueProducts(data.detalles, ctx));
 
 export const updatePurchaseDto = z.object({
   idProveedor: uuidDto,
+  numeroComprobante: numeroComprobanteDto,
   fecha: z.coerce.date().optional(),
   detalles: z.array(purchaseDetailDto).min(1),
 }).superRefine((data, ctx) => assertUniqueProducts(data.detalles, ctx));

@@ -7,16 +7,19 @@ import {
   listLogsController,
   listUsersController,
   resetUserController,
+  updateUserController,
 } from '../controllers/securityController.js';
 import {
   createClientDto,
   createUserDto,
+  listLogDto,
   resetUserDto,
+  updateUserDto,
   userIdDto,
 } from '../dto/security.dto.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
 import { requirePermissions } from '../middlewares/authorizationMiddleware.js';
-import { validateBody } from '../middlewares/validateDto.js';
+import { validateBody, validateQuery } from '../middlewares/validateDto.js';
 import { AppError } from '../utils/AppError.js';
 
 const validateUserId = (req, _res, next) => {
@@ -42,6 +45,13 @@ securityRouter.post(
   validateBody(createUserDto),
   createUserController,
 );
+securityRouter.patch(
+  '/usuarios/:id',
+  requirePermissions('USUARIOS_GESTIONAR'),
+  validateUserId,
+  validateBody(updateUserDto),
+  updateUserController,
+);
 securityRouter.post(
   '/usuarios/:id/restablecer',
   requirePermissions('USUARIOS_GESTIONAR'),
@@ -63,6 +73,7 @@ securityRouter.post(
 securityRouter.get(
   '/bitacora',
   requirePermissions('BITACORA_CONSULTAR'),
+  validateQuery(listLogDto),
   listLogsController,
 );
 

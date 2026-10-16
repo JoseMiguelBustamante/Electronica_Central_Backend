@@ -1,10 +1,10 @@
 -- =============================================================================
--- Electrónica Central AZ — esquema completo (migraciones 001 → 010)
+-- Electrónica Central AZ — esquema completo (migraciones 001 → 015)
 -- =============================================================================
 -- Generado automáticamente. No editar a mano: regenerar con:
 --   cd backend && npm run db:bundle
 --
--- Origen: backend/scripts/migrations/001_schema_reference.sql … 010_reports_permissions.sql
+-- Origen: backend/scripts/migrations/001_schema_reference.sql … 015_ciclo1_ciclo2_gaps.sql
 --
 -- Uso (BD vacía / nueva):
 --   1. CREATE DATABASE … (si aplica; en Supabase no crear DB)
@@ -176,6 +176,7 @@ CREATE TABLE electronica_az.producto (
     descripcion text,
     precio_venta numeric(18,4) NOT NULL,
     activo boolean NOT NULL DEFAULT true,
+    creado_en timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
     id_categoria uuid NOT NULL,
     id_unidad_medida uuid NOT NULL,
     id_ubicacion uuid NOT NULL,
@@ -797,6 +798,137 @@ CROSS JOIN electronica_az.permiso p
 WHERE r.nombre IN ('ADMINISTRADOR', 'DESARROLLADOR')
   AND p.codigo = 'REPORTES_CONSULTAR'
 ON CONFLICT DO NOTHING;
+
+COMMIT;
+
+-- #############################################################################
+-- >>> 011_auth_lockout_and_recovery.sql
+-- #############################################################################
+
+-- Login lockout counters and email recovery tokens.
+BEGIN;
+
+ALTER TABLE electronica_az.usuario
+  ADD COLUMN IF NOT EXISTS intentos_fallidos integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS bloqueado_hasta timestamptz;
+
+ALTER TABLE electronica_az.usuario
+  DROP CONSTRAINT IF EXISTS ck_usuario_intentos_fallidos;
+
+ALTER TABLE electronica_az.usuario
+  ADD CONSTRAINT ck_usuario_intentos_fallidos CHECK (intentos_fallidos >= 0);
+
+CREATE TABLE IF NOT EXISTS electronica_az.token_recuperacion (
+    id_token uuid NOT NULL DEFAULT gen_random_uuid(),
+    token_hash text NOT NULL,
+    creado_en timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expira_en timestamptz NOT NULL,
+    usado_en timestamptz,
+    id_usuario uuid NOT NULL,
+    CONSTRAINT pk_token_recuperacion PRIMARY KEY (id_token),
+    CONSTRAINT uq_token_recuperacion_hash UNIQUE (token_hash),
+    CONSTRAINT fk_token_recuperacion_usuario FOREIGN KEY (id_usuario)
+        REFERENCES electronica_az.usuario (id_usuario)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE INDEX IF NOT EXISTS ix_token_recuperacion_usuario
+  ON electronica_az.token_recuperacion (id_usuario, expira_en)
+  WHERE usado_en IS NULL;
+
+CREATE INDEX IF NOT EXISTS ix_usuario_bloqueado_hasta
+  ON electronica_az.usuario (bloqueado_hasta)
+  WHERE bloqueado_hasta IS NOT NULL;
+
+COMMIT;
+
+-- #############################################################################
+-- >>> 012_progressive_lockout.sql
+-- #############################################################################
+
+-- Progressive login lockout level (duration doubles per lock cycle).
+BEGIN;
+
+ALTER TABLE electronica_az.usuario
+  ADD COLUMN IF NOT EXISTS nivel_bloqueo integer NOT NULL DEFAULT 0;
+
+ALTER TABLE electronica_az.usuario
+  DROP CONSTRAINT IF EXISTS ck_usuario_nivel_bloqueo;
+
+ALTER TABLE electronica_az.usuario
+  ADD CONSTRAINT ck_usuario_nivel_bloqueo CHECK (nivel_bloqueo >= 0);
+
+COMMIT;
+
+-- #############################################################################
+-- >>> 013_producto_creado_en.sql
+-- #############################################################################
+
+-- Persist product creation timestamp (date + time).
+BEGIN;
+
+ALTER TABLE electronica_az.producto
+  ADD COLUMN IF NOT EXISTS creado_en timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+CREATE INDEX IF NOT EXISTS ix_producto_creado_en
+  ON electronica_az.producto (creado_en DESC);
+
+COMMIT;
+
+-- #############################################################################
+-- >>> 014_backfill_producto_creado_en.sql
+-- #############################################################################
+
+-- Prefer first inventory movement as product creation time when available.
+BEGIN;
+
+UPDATE electronica_az.producto p
+SET creado_en = s.primer_mov
+FROM (
+  SELECT id_producto, MIN(fecha_hora) AS primer_mov
+  FROM electronica_az.movimiento_inventario
+  GROUP BY id_producto
+) s
+WHERE p.id_producto = s.id_producto
+  AND s.primer_mov IS NOT NULL
+  AND p.creado_en > s.primer_mov;
+
+COMMIT;
+
+-- #############################################################################
+-- >>> 015_ciclo1_ciclo2_gaps.sql
+-- #############################################################################
+
+-- Ciclo 1 / Ciclo 2 gaps vs perfil (Grupo 14):
+--   CU-4  precio de compra + margen de ganancia del producto
+--   CU-13 número de comprobante único por compra
+--   CU-3  tabla afectada en la bitácora (la IP ya existía en direccion_ip)
+-- Solo agrega columnas e índices; no modifica datos existentes.
+BEGIN;
+
+ALTER TABLE electronica_az.producto
+  ADD COLUMN IF NOT EXISTS precio_compra numeric(18,4) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS margen_ganancia numeric(9,4) NOT NULL DEFAULT 0;
+
+ALTER TABLE electronica_az.producto
+  DROP CONSTRAINT IF EXISTS ck_producto_precio_compra,
+  ADD CONSTRAINT ck_producto_precio_compra CHECK (precio_compra >= 0 AND precio_compra <> 'NaN'::numeric),
+  DROP CONSTRAINT IF EXISTS ck_producto_margen_ganancia,
+  ADD CONSTRAINT ck_producto_margen_ganancia CHECK (margen_ganancia >= 0 AND margen_ganancia <> 'NaN'::numeric);
+
+-- Nullable para no romper compras previas; la API lo exige en altas nuevas.
+ALTER TABLE electronica_az.compra
+  ADD COLUMN IF NOT EXISTS numero_comprobante varchar(120);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_compra_numero_comprobante
+  ON electronica_az.compra (lower(btrim(numero_comprobante)))
+  WHERE numero_comprobante IS NOT NULL;
+
+ALTER TABLE electronica_az.registro_bitacora
+  ADD COLUMN IF NOT EXISTS tabla_afectada varchar(120);
+
+CREATE INDEX IF NOT EXISTS ix_registro_bitacora_fecha_hora
+  ON electronica_az.registro_bitacora (fecha_hora DESC);
 
 COMMIT;
 

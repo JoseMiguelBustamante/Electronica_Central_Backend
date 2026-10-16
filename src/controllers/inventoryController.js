@@ -7,6 +7,7 @@ import {
   previewOpeningService,
   updateStockMinimoService,
 } from '../services/inventoryService.js';
+import { audit } from '../services/auditService.js';
 import { sendError } from '../utils/sendError.js';
 
 export const getInventoryListController = async (req, res) => {
@@ -55,6 +56,7 @@ export const updateStockMinimoController = async (req, res) => {
       req.validated.params.productoId,
       req.validated.body.stockMinimo,
     );
+    await audit(req, 'STOCK_MINIMO_EDITADO', 'existencia', req.validated.params.productoId);
     return res.status(200).json({ data });
   } catch (error) {
     return sendError(res, error);
@@ -64,6 +66,9 @@ export const updateStockMinimoController = async (req, res) => {
 export const createInventoryAdjustmentController = async (req, res) => {
   try {
     const result = await createInventoryAdjustmentService(req.validated.body, req.auth.usuario);
+    if (!result.cached) {
+      await audit(req, `AJUSTE_INVENTARIO_${req.validated.body.tipo}`, 'movimiento_inventario', req.validated.body.idProducto);
+    }
     return res.status(result.statusHttp).json({ data: result.data });
   } catch (error) {
     return sendError(res, error);
@@ -82,6 +87,7 @@ export const previewOpeningController = async (req, res) => {
 export const confirmOpeningController = async (req, res) => {
   try {
     const result = await confirmOpeningService(req.validated.body, req.auth.usuario);
+    if (!result.cached) await audit(req, 'APERTURA_INVENTARIO', 'movimiento_inventario', 'apertura');
     return res.status(result.statusHttp).json({ data: result.data });
   } catch (error) {
     return sendError(res, error);

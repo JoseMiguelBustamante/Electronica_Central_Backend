@@ -5,7 +5,7 @@ const OPERACION_RECIBIR = 'COMPRA_RECIBIR';
 
 export const listPurchases = async (estado, idProveedor, limite, desplazamiento) => {
   const result = await query(`
-    SELECT c.id_compra, c.fecha, c.estado, c.id_proveedor, c.id_usuario,
+    SELECT c.id_compra, c.numero_comprobante, c.fecha, c.estado, c.id_proveedor, c.id_usuario,
       p.razon_social AS proveedor_razon_social,
       count(*) OVER() AS total
     FROM electronica_az.compra c
@@ -20,7 +20,7 @@ export const listPurchases = async (estado, idProveedor, limite, desplazamiento)
 
 export const getPurchaseById = async (idCompra) => {
   const header = await query(
-    `SELECT c.id_compra, c.fecha, c.estado, c.id_proveedor, c.id_usuario,
+    `SELECT c.id_compra, c.numero_comprobante, c.fecha, c.estado, c.id_proveedor, c.id_usuario,
        p.razon_social AS proveedor_razon_social, p.activo AS proveedor_activo
      FROM electronica_az.compra c
      JOIN electronica_az.proveedor p ON p.id_proveedor = c.id_proveedor
@@ -64,13 +64,13 @@ export const getProductsForPurchase = async (ids) => {
   return result.rows;
 };
 
-export const createPurchase = async (idProveedor, idUsuario, fecha, detalles) => (
+export const createPurchase = async (idProveedor, idUsuario, fecha, detalles, numeroComprobante) => (
   withTransaction(async (client) => {
     const compra = await client.query(
-      `INSERT INTO electronica_az.compra(id_proveedor, id_usuario, fecha, estado)
-       VALUES ($1, $2, COALESCE($3::timestamptz, CURRENT_TIMESTAMP), 'PENDIENTE')
-       RETURNING id_compra, fecha, estado, id_proveedor, id_usuario`,
-      [idProveedor, idUsuario, fecha ?? null],
+      `INSERT INTO electronica_az.compra(id_proveedor, id_usuario, fecha, estado, numero_comprobante)
+       VALUES ($1, $2, COALESCE($3::timestamptz, CURRENT_TIMESTAMP), 'PENDIENTE', $4)
+       RETURNING id_compra, numero_comprobante, fecha, estado, id_proveedor, id_usuario`,
+      [idProveedor, idUsuario, fecha ?? null, numeroComprobante],
     );
 
     const inserted = [];
@@ -89,7 +89,7 @@ export const createPurchase = async (idProveedor, idUsuario, fecha, detalles) =>
   })
 );
 
-export const replacePurchase = async (idCompra, idProveedor, fecha, detalles) => (
+export const replacePurchase = async (idCompra, idProveedor, fecha, detalles, numeroComprobante) => (
   withTransaction(async (client) => {
     const locked = await client.query(
       `SELECT id_compra, estado FROM electronica_az.compra
@@ -103,9 +103,10 @@ export const replacePurchase = async (idCompra, idProveedor, fecha, detalles) =>
     await client.query(
       `UPDATE electronica_az.compra
        SET id_proveedor = $2,
-           fecha = COALESCE($3::timestamptz, fecha)
+           fecha = COALESCE($3::timestamptz, fecha),
+           numero_comprobante = $4
        WHERE id_compra = $1`,
-      [idCompra, idProveedor, fecha ?? null],
+      [idCompra, idProveedor, fecha ?? null, numeroComprobante],
     );
     await client.query(
       'DELETE FROM electronica_az.detalle_compra WHERE id_compra = $1',
@@ -125,7 +126,7 @@ export const replacePurchase = async (idCompra, idProveedor, fecha, detalles) =>
     }
 
     const updated = await client.query(
-      `SELECT id_compra, fecha, estado, id_proveedor, id_usuario
+      `SELECT id_compra, numero_comprobante, fecha, estado, id_proveedor, id_usuario
        FROM electronica_az.compra WHERE id_compra = $1`,
       [idCompra],
     );
@@ -156,7 +157,7 @@ export const saveIdempotencyRecord = async (idUsuario, operacion, clave, hashSol
 
 export const receivePurchase = async (idCompra, idUsuario) => withTransaction(async (client) => {
   const locked = await client.query(
-    `SELECT id_compra, estado, id_proveedor, id_usuario, fecha
+    `SELECT id_compra, numero_comprobante, estado, id_proveedor, id_usuario, fecha
      FROM electronica_az.compra
      WHERE id_compra = $1
      FOR UPDATE`,
@@ -251,7 +252,7 @@ export const receivePurchase = async (idCompra, idUsuario) => withTransaction(as
 
 export const cancelPurchase = async (idCompra) => withTransaction(async (client) => {
   const locked = await client.query(
-    `SELECT id_compra, estado, id_proveedor, id_usuario, fecha
+    `SELECT id_compra, numero_comprobante, estado, id_proveedor, id_usuario, fecha
      FROM electronica_az.compra
      WHERE id_compra = $1
      FOR UPDATE`,

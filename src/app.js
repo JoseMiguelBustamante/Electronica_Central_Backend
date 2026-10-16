@@ -25,6 +25,9 @@ export const createApp = () => {
 
   mkdirSync(productImagesDir, { recursive: true });
 
+  // One reverse proxy (Traefik on Dokploy) sits in front: trust it so req.ip is the client IP for the bitácora.
+  app.set('trust proxy', 1);
+
   app.use(corsMiddleware);
   app.use(express.json());
   app.use(

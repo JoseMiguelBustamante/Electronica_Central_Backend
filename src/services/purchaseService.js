@@ -31,6 +31,7 @@ const mapDetail = (row) => ({
 
 const mapPurchase = (row) => ({
   idCompra: row.id_compra,
+  numeroComprobante: row.numero_comprobante ?? null,
   fecha: row.fecha,
   estado: row.estado,
   idProveedor: row.id_proveedor,
@@ -108,6 +109,7 @@ export const listPurchasesService = async ({ estado, idProveedor, pagina, limite
   return {
     items: rows.map((row) => ({
       idCompra: row.id_compra,
+      numeroComprobante: row.numero_comprobante ?? null,
       fecha: row.fecha,
       estado: row.estado,
       idProveedor: row.id_proveedor,
@@ -126,6 +128,17 @@ export const getPurchaseService = async (id) => {
   return mapPurchase(row);
 };
 
+/** CU-13: el número de comprobante no se puede repetir. */
+const duplicateReceipt = (error) => {
+  if (error.code === '23505' && error.constraint === 'uq_compra_numero_comprobante') {
+    throw new AppError(errorCodes.CONFLICT, 409, {
+      reason: 'DUPLICATE_RECEIPT_NUMBER',
+      message: 'El número de comprobante ya está registrado en otra compra.',
+    });
+  }
+  throw error;
+};
+
 export const createPurchaseService = async (body, usuario) => {
   await validatePurchaseLines(body.idProveedor, body.detalles);
   const created = await createPurchase(
@@ -133,7 +146,8 @@ export const createPurchaseService = async (body, usuario) => {
     usuario.id,
     body.fecha ?? null,
     body.detalles,
-  );
+    body.numeroComprobante,
+  ).catch(duplicateReceipt);
   return mapPurchase({
     ...created,
     proveedor_razon_social: undefined,
@@ -143,7 +157,9 @@ export const createPurchaseService = async (body, usuario) => {
 
 export const updatePurchaseService = async (id, body) => {
   await validatePurchaseLines(body.idProveedor, body.detalles);
-  const result = await replacePurchase(id, body.idProveedor, body.fecha ?? null, body.detalles);
+  const result = await replacePurchase(
+    id, body.idProveedor, body.fecha ?? null, body.detalles, body.numeroComprobante,
+  ).catch(duplicateReceipt);
   if (result.status === 'NOT_FOUND') throw new AppError(errorCodes.NOT_FOUND);
   if (result.status === 'INVALID_STATE') {
     throw new AppError(errorCodes.BUSINESS_RULE, 422, {
@@ -185,6 +201,7 @@ export const receivePurchaseService = async (id, body, usuario) => {
   const data = {
     compra: {
       idCompra: result.compra.id_compra,
+      numeroComprobante: result.compra.numero_comprobante ?? null,
       estado: result.compra.estado,
       idProveedor: result.compra.id_proveedor,
       fecha: result.compra.fecha,

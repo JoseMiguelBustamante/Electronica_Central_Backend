@@ -124,11 +124,28 @@ describe('purchases flow with PostgreSQL', () => {
 
     const purchase = await request(app).post('/api/compras').set(authorize).send({
       idProveedor: supplierId,
+      numeroComprobante: `F-${suffix}-1`,
       detalles: [{ idProducto: productId, cantidad: 5, costoUnitario: 8 }],
     });
     expect(purchase.status).toBe(201);
     expect(purchase.body.data.estado).toBe('PENDIENTE');
+    expect(purchase.body.data.numeroComprobante).toBe(`F-${suffix}-1`);
     purchaseId = purchase.body.data.idCompra;
+
+    // CU-13: comprobante obligatorio y único (sin distinguir mayúsculas ni espacios).
+    const duplicateReceipt = await request(app).post('/api/compras').set(authorize).send({
+      idProveedor: supplierId,
+      numeroComprobante: ` f-${suffix}-1 `,
+      detalles: [{ idProducto: productId, cantidad: 1, costoUnitario: 1 }],
+    });
+    expect(duplicateReceipt.status).toBe(409);
+    expect(duplicateReceipt.body.error.details.reason).toBe('DUPLICATE_RECEIPT_NUMBER');
+
+    const missingReceipt = await request(app).post('/api/compras').set(authorize).send({
+      idProveedor: supplierId,
+      detalles: [{ idProducto: productId, cantidad: 1, costoUnitario: 1 }],
+    });
+    expect(missingReceipt.status).toBe(400);
 
     const stockAfterCreate = await query(
       'SELECT stock_actual FROM electronica_az.existencia WHERE id_producto = $1',
@@ -138,6 +155,7 @@ describe('purchases flow with PostgreSQL', () => {
 
     const patched = await request(app).patch(`/api/compras/${purchaseId}`).set(authorize).send({
       idProveedor: supplierId,
+      numeroComprobante: `F-${suffix}-1`,
       detalles: [{ idProducto: productId, cantidad: 4, costoUnitario: 10 }],
     });
     expect(patched.status).toBe(200);
@@ -200,6 +218,7 @@ describe('purchases flow with PostgreSQL', () => {
 
     const patchBlocked = await request(app).patch(`/api/compras/${purchaseId}`).set(authorize).send({
       idProveedor: supplierId,
+      numeroComprobante: `F-${suffix}-1`,
       detalles: [{ idProducto: productId, cantidad: 1, costoUnitario: 1 }],
     });
     expect(patchBlocked.status).toBe(422);
@@ -212,6 +231,7 @@ describe('purchases flow with PostgreSQL', () => {
 
     const purchaseWithInactive = await request(app).post('/api/compras').set(authorize).send({
       idProveedor: supplierId,
+      numeroComprobante: `F-${suffix}-2`,
       detalles: [{ idProducto: productId, cantidad: 1, costoUnitario: 1 }],
     });
     expect(purchaseWithInactive.status).toBe(422);
@@ -224,6 +244,7 @@ describe('purchases flow with PostgreSQL', () => {
 
     const toCancel = await request(app).post('/api/compras').set(authorize).send({
       idProveedor: cancelableSupplier.body.data.idProveedor,
+      numeroComprobante: `F-${suffix}-3`,
       detalles: [{ idProducto: productId, cantidad: 2, costoUnitario: 3 }],
     });
     expect(toCancel.status).toBe(201);

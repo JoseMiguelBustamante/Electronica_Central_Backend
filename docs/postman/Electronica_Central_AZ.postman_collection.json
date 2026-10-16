@@ -501,6 +501,242 @@
           "response": []
         },
         {
+          "name": "PATCH /api/categorias/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/categorias/{{id}}",
+            "description": "Editar categoría | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"ejemplo-nombre\",\n  \"descripcion\": \"ejemplo-descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/categorias/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/categorias/{{id}}",
+            "description": "Eliminar categoría (409 si está en uso) | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/marcas/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/marcas/{{id}}",
+            "description": "Editar marca | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"ejemplo-nombre\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/marcas/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/marcas/{{id}}",
+            "description": "Eliminar marca (409 si está en uso) | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/unidades/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/unidades/{{id}}",
+            "description": "Editar unidad de medida | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"ejemplo-nombre\",\n  \"simbolo\": \"ejemplo-simbolo\",\n  \"permiteFraccion\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/unidades/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/unidades/{{id}}",
+            "description": "Eliminar unidad de medida (409 si está en uso) | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/modelos/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/modelos/{{id}}",
+            "description": "Editar modelo | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"ejemplo-nombre\",\n  \"descripcion\": \"ejemplo-descripcion\",\n  \"idMarca\": \"{{idMarca}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/modelos/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/modelos/{{id}}",
+            "description": "Eliminar modelo (409 si está en uso) | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "POST /api/productos",
           "request": {
             "method": "POST",
@@ -524,12 +760,37 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"codigo\": \"ejemplo-codigo\",\n  \"nombre\": \"ejemplo-nombre\",\n  \"descripcion\": \"ejemplo-descripcion\",\n  \"precioVenta\": 1,\n  \"idCategoria\": \"{{idCategoria}}\",\n  \"idUnidadMedida\": \"{{idUnidadMedida}}\",\n  \"idUbicacion\": \"{{idUbicacion}}\",\n  \"idMarca\": \"{{idMarca}}\",\n  \"idModelo\": \"{{idModelo}}\",\n  \"stockMinimo\": 0\n}",
+              "raw": "{\n  \"codigo\": \"ejemplo-codigo\",\n  \"nombre\": \"ejemplo-nombre\",\n  \"descripcion\": \"ejemplo-descripcion\",\n  \"precioVenta\": 1,\n  \"precioCompra\": 0,\n  \"margenGanancia\": 0,\n  \"idCategoria\": \"{{idCategoria}}\",\n  \"idUnidadMedida\": \"{{idUnidadMedida}}\",\n  \"idUbicacion\": \"{{idUbicacion}}\",\n  \"idMarca\": \"{{idMarca}}\",\n  \"idModelo\": \"{{idModelo}}\",\n  \"stockMinimo\": 0\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/productos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/productos",
+            "description": "Listar productos (admin, incluye inactivos) | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
@@ -545,7 +806,7 @@
               }
             ],
             "url": "{{baseUrl}}/api/productos/{{id}}",
-            "description": "Desactivar producto | permiso: CATALOGO_GESTIONAR",
+            "description": "Editar, desactivar o reactivar producto | permiso: CATALOGO_GESTIONAR",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -558,12 +819,37 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"activo\": false\n}",
+              "raw": "{\n  \"codigo\": \"ejemplo-codigo\",\n  \"nombre\": \"ejemplo-nombre\",\n  \"descripcion\": \"ejemplo-descripcion\",\n  \"precioVenta\": 1,\n  \"precioCompra\": 1,\n  \"margenGanancia\": 1,\n  \"idCategoria\": \"{{idCategoria}}\",\n  \"idUnidadMedida\": \"{{idUnidadMedida}}\",\n  \"idUbicacion\": \"{{idUbicacion}}\",\n  \"idMarca\": \"{{idMarca}}\",\n  \"idModelo\": \"{{idModelo}}\",\n  \"stockMinimo\": 1,\n  \"activo\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/productos/{id}/compatibilidades",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/productos/{{id}}/compatibilidades",
+            "description": "Modelos compatibles del producto | permiso: CATALOGO_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
@@ -682,6 +968,40 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombreUsuario\": \"ejemplo-nombreUsuario\",\n  \"correo\": \"demo@example.test\",\n  \"contrasena\": \"ClaveDePruebaSegura123\",\n  \"roles\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/usuarios/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/usuarios/{{id}}",
+            "description": "Editar, activar o desactivar usuario | permiso: USUARIOS_GESTIONAR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreUsuario\": \"ejemplo-nombreUsuario\",\n  \"correo\": \"demo@example.test\",\n  \"activo\": true,\n  \"roles\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1207,7 +1527,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idProveedor\": \"{{idProveedor}}\",\n  \"fecha\": \"2026-09-25T21:42:00.030Z\",\n  \"detalles\": [\n    {\n      \"idProducto\": \"{{idProducto}}\",\n      \"cantidad\": 1,\n      \"costoUnitario\": 1\n    }\n  ]\n}",
+              "raw": "{\n  \"idProveedor\": \"{{idProveedor}}\",\n  \"numeroComprobante\": \"ejemplo-numeroComprobante\",\n  \"fecha\": \"2026-10-16T03:56:01.366Z\",\n  \"detalles\": [\n    {\n      \"idProducto\": \"{{idProducto}}\",\n      \"cantidad\": 1,\n      \"costoUnitario\": 1\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1266,7 +1586,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idProveedor\": \"{{idProveedor}}\",\n  \"fecha\": \"2026-09-25T21:42:00.031Z\",\n  \"detalles\": [\n    {\n      \"idProducto\": \"{{idProducto}}\",\n      \"cantidad\": 1,\n      \"costoUnitario\": 1\n    }\n  ]\n}",
+              "raw": "{\n  \"idProveedor\": \"{{idProveedor}}\",\n  \"numeroComprobante\": \"ejemplo-numeroComprobante\",\n  \"fecha\": \"2026-10-16T03:56:01.366Z\",\n  \"detalles\": [\n    {\n      \"idProducto\": \"{{idProducto}}\",\n      \"cantidad\": 1,\n      \"costoUnitario\": 1\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
