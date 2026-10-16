@@ -14,5 +14,5 @@ ENV NODE_ENV=production
 ENV PORT=3001
 EXPOSE 80
 
-# Dokploy injects env; createEnvFile also writes .env for local tooling.
-CMD ["sh", "-c", "node index.js & exec nginx -g 'daemon off;'"]
+# Keep the shell as PID parent so background node is not killed by exec/SIGHUP.
+CMD ["sh", "-c", "node index.js & nginx -g 'daemon off;'"]
