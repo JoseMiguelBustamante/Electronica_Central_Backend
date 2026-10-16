@@ -45,6 +45,14 @@ describe('catalog flow with PostgreSQL', () => {
       idModelo: model.body.data.id_modelo,
     });
     expect(product.status).toBe(201);
+    expect(product.body.data.creado_en).toBeTruthy();
+
+    const stamp = await query(
+      'SELECT creado_en FROM electronica_az.producto WHERE id_producto = $1',
+      [product.body.data.id_producto],
+    );
+    expect(stamp.rows[0].creado_en).toBeTruthy();
+    expect(new Date(stamp.rows[0].creado_en).getTime()).toBeGreaterThan(Date.now() - 60_000);
 
     const existence = await query(
       'SELECT stock_actual, stock_minimo FROM electronica_az.existencia WHERE id_producto = $1',

@@ -154,6 +154,7 @@ CREATE TABLE electronica_az.producto (
     descripcion text,
     precio_venta numeric(18,4) NOT NULL,
     activo boolean NOT NULL DEFAULT true,
+    creado_en timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
     id_categoria uuid NOT NULL,
     id_unidad_medida uuid NOT NULL,
     id_ubicacion uuid NOT NULL,
