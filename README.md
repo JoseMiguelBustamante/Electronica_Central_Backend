@@ -56,6 +56,17 @@ Detalle: `scripts/seed/README.md`.
 - Perfil académico Ciclo 2: `docs/PerfilGrupo14_2doCiclo.docx`
 - Verificación operacional vs Ciclo 2: `docs/ciclo-2-verificacion.md`
 
+## Product images (storefront)
+
+Photos are **not** in the database. Drop files named with the product code into `media/productos/`:
+
+- File: `CODIGO.jpg` (example: `1200AP100.jpg`)
+- Served at: `GET /media/productos/CODIGO.jpg`
+- Optional env: `PRODUCT_IMAGES_DIR` (absolute path). Default: `./media/productos`
+- On Dokploy, mount a host volume at `/app/media/productos` so images survive redeploys.
+
+Details: `media/productos/README.md`.
+
 ## Checklist
 
 - [ ] `.env` listo (no se sube a git)
@@ -64,3 +75,4 @@ Detalle: `scripts/seed/README.md`.
 - [ ] Seed Excel (opcional pero requerido para catálogo de negocio)
 - [ ] API arriba y login admin OK
 - [ ] Revisar `docs/ciclo-2-verificacion.md`
+- [ ] (Opcional) imágenes en `media/productos/<codigo>.jpg`

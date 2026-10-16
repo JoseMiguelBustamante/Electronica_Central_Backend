@@ -7,6 +7,10 @@ coverage
 test
 *.md
 odd
+# Product photos live on a host/Dokploy volume, not in the image.
+media/productos/**
+!media/productos/.gitkeep
+!media/productos/README.md
 # Keep docs/openapi.yaml in the image (startup reads it for /docs).
 docs/**
 !docs/openapi.yaml
