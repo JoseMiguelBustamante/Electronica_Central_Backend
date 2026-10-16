@@ -1,0 +1,10 @@
+node_modules
+.git
+.codegraph
+.env
+.env.*
+coverage
+test
+docs
+*.md
+odd
