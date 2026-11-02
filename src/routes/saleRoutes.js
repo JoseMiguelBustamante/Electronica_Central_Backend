@@ -11,6 +11,7 @@ import {
   listSalesController,
   updateSaleController,
 } from '../controllers/saleController.js';
+import { createOnlinePaymentController } from '../controllers/paymentController.js';
 import {
   createSaleDto,
   comprobanteQueryDto,
@@ -19,7 +20,7 @@ import {
   saleIdParamsDto,
   updateSaleDto,
 } from '../dto/sale.dto.js';
-import { createPaymentDto } from '../dto/payment.dto.js';
+import { createOnlinePaymentDto, createPaymentDto } from '../dto/payment.dto.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
 import { requirePermissions } from '../middlewares/authorizationMiddleware.js';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validateDto.js';
@@ -77,6 +78,13 @@ saleRouter.post(
   validateParams(saleIdParamsDto),
   validateBody(createPaymentDto),
   createSalePaymentController,
+);
+saleRouter.post(
+  '/:id/pagos/en-linea',
+  ...manageSales,
+  validateParams(saleIdParamsDto),
+  validateBody(createOnlinePaymentDto),
+  createOnlinePaymentController,
 );
 
 export default saleRouter;

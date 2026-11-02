@@ -13,6 +13,7 @@ import requestRouter from './routes/requestRoutes.js';
 import saleRouter from './routes/saleRoutes.js';
 import supplierRouter from './routes/supplierRoutes.js';
 import securityRouter from './routes/securityRoutes.js';
+import { stripeWebhookController } from './controllers/paymentController.js';
 import { corsMiddleware } from './middlewares/corsMiddleware.js';
 import { sendError } from './utils/sendError.js';
 
@@ -29,6 +30,12 @@ export const createApp = () => {
   app.set('trust proxy', 1);
 
   app.use(corsMiddleware);
+  // Misma ruta que la rama del compañero: firma Stripe sobre cuerpo crudo.
+  app.post(
+    '/api/pagos/webhook/stripe',
+    express.raw({ type: 'application/json' }),
+    stripeWebhookController,
+  );
   app.use(express.json());
   app.use(
     '/media/productos',

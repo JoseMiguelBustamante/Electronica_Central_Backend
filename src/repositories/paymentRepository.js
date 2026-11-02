@@ -21,6 +21,25 @@ export const getPaymentById = async (idPago) => {
   return result.rows[0] ?? null;
 };
 
+export const getPaymentByReference = async (referenciaExterna) => {
+  const result = await query(
+    `SELECT id_pago, fecha_hora, monto, metodo, estado, referencia_externa, id_venta, id_usuario
+     FROM electronica_az.pago WHERE referencia_externa = $1`,
+    [referenciaExterna],
+  );
+  return result.rows[0] ?? null;
+};
+
+export const markPaymentRefunded = async (idPago) => {
+  const result = await query(
+    `UPDATE electronica_az.pago SET estado = 'ANULADO'
+     WHERE id_pago = $1 AND estado IN ('PENDIENTE', 'RECHAZADO')
+     RETURNING id_pago, fecha_hora, monto, metodo, estado, referencia_externa, id_venta, id_usuario`,
+    [idPago],
+  );
+  return result.rows[0] ?? null;
+};
+
 export const createPayment = async (idVenta, idUsuario, monto, metodo, referenciaExterna) => {
   const result = await query(
     `INSERT INTO electronica_az.pago(
@@ -32,7 +51,7 @@ export const createPayment = async (idVenta, idUsuario, monto, metodo, referenci
   return result.rows[0];
 };
 
-export const confirmPayment = async (idPago, saleTotal) => withTransaction(async (client) => {
+export const confirmPayment = async (idPago, payableStates) => withTransaction(async (client) => {
   const payment = await client.query(
     `SELECT id_pago, estado, monto, id_venta, metodo, referencia_externa, id_usuario, fecha_hora
      FROM electronica_az.pago WHERE id_pago = $1 FOR UPDATE`,
@@ -46,9 +65,15 @@ export const confirmPayment = async (idPago, saleTotal) => withTransaction(async
     `SELECT id_venta, estado FROM electronica_az.venta WHERE id_venta = $1 FOR UPDATE`,
     [row.id_venta],
   );
-  if (!venta.rows[0] || venta.rows[0].estado !== 'CONFIRMADA') {
-    return { status: 'SALE_NOT_CONFIRMADA' };
+  if (!venta.rows[0] || !payableStates.includes(venta.rows[0].estado)) {
+    return { status: 'SALE_NOT_PAYABLE', estado: venta.rows[0]?.estado ?? null };
   }
+
+  const saleTotal = Number((await client.query(
+    `SELECT round(coalesce(sum(cantidad * precio_unitario), 0), 2) AS total
+     FROM electronica_az.detalle_venta WHERE id_venta = $1`,
+    [row.id_venta],
+  )).rows[0].total);
 
   const sum = await client.query(
     `SELECT coalesce(sum(monto), 0)::numeric AS total

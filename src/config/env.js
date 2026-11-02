@@ -16,6 +16,14 @@ const envSchema = z.object({
         .filter(Boolean),
     )
     .pipe(z.array(z.string().url()).min(1)),
+  /** Pasarela Stripe test (rama compañero). Vacío = cobro en línea deshabilitado (503). */
+  STRIPE_SECRET_KEY: z.string().optional().default(''),
+  STRIPE_PUBLISHABLE_KEY: z.string().optional().default(''),
+  STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
+  STRIPE_CURRENCY: z.string().trim().toLowerCase().length(3).default('bob'),
+  STRIPE_CHECKOUT_EXPIRES_MINUTES: z.coerce.number().int().min(30).max(24 * 60).default(30),
+  PAYMENT_SUCCESS_URL: z.string().url().default('http://localhost:5173/carrito?pago=ok'),
+  PAYMENT_CANCEL_URL: z.string().url().default('http://localhost:5173/carrito?pago=cancel'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -27,8 +35,7 @@ if (!parsed.success) {
 
 export const env = {
   ...parsed.data,
-  /** Allowed browser origins for CORS. */
   FRONTEND_ORIGINS: parsed.data.FRONTEND_ORIGIN,
-  /** Primary origin (first entry) for links / redirects. */
   FRONTEND_ORIGIN: parsed.data.FRONTEND_ORIGIN[0],
+  stripeConfigured: Boolean(parsed.data.STRIPE_SECRET_KEY?.startsWith('sk_')),
 };
