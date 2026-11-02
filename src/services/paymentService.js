@@ -170,6 +170,15 @@ export const createPaymentService = async (idVenta, body, usuario) => {
   let monto = ceilToHalfStep(body.monto);
   const saldoRedondeado = Number((Math.ceil(roundHalfUp2(totals.saldo) / 0.5) * 0.5).toFixed(2));
   if (totals.saldo > 0 && monto > totals.saldo && monto <= saldoRedondeado) monto = totals.saldo;
+  // Mostrador: se cobra el saldo completo (sin pagos parciales).
+  if (roundHalfUp2(monto) < roundHalfUp2(totals.saldo)) {
+    throw new AppError(errorCodes.BUSINESS_RULE, 422, {
+      reason: 'PARTIAL_PAYMENT_NOT_ALLOWED',
+      mensaje: 'Debe cobrar el saldo completo de la venta.',
+      saldo: totals.saldo,
+      monto,
+    });
+  }
   if (roundHalfUp2(totals.cobrado + monto) > totals.total) {
     throw new AppError(errorCodes.BUSINESS_RULE, 422, {
       reason: 'PAYMENT_EXCEEDS_BALANCE',
@@ -297,6 +306,14 @@ export const createOnlinePaymentService = async (idVenta, body, usuario) => {
     throw new AppError(errorCodes.BUSINESS_RULE, 422, { reason: 'SALE_ALREADY_PAID' });
   }
   const monto = roundHalfUp2(body.monto ?? totals.saldo);
+  if (monto < totals.saldo) {
+    throw new AppError(errorCodes.BUSINESS_RULE, 422, {
+      reason: 'PARTIAL_PAYMENT_NOT_ALLOWED',
+      mensaje: 'Debe cobrar el saldo completo de la venta.',
+      saldo: totals.saldo,
+      monto,
+    });
+  }
   if (monto > totals.saldo) {
     throw new AppError(errorCodes.BUSINESS_RULE, 422, {
       reason: 'PAYMENT_EXCEEDS_BALANCE',
