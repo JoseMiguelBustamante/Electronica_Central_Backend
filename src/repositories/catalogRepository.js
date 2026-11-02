@@ -308,7 +308,7 @@ export const productExists = async (idProducto) => (
 export const getPublicProducts = async (buscar, idCategoria, idMarca, idModelo, limite, desplazamiento) => {
   const result = await query(`
     SELECT p.id_producto, p.codigo, p.nombre, p.descripcion, p.precio_venta, p.creado_en,
-      c.nombre AS categoria, m.nombre AS marca, mo.nombre AS modelo,
+      p.id_categoria, c.nombre AS categoria, m.nombre AS marca, mo.nombre AS modelo,
       CASE WHEN e.stock_actual > 0 THEN 'DISPONIBLE' ELSE 'NO_DISPONIBLE' END AS disponibilidad,
       count(*) OVER() AS total
     FROM electronica_az.producto p
@@ -337,7 +337,7 @@ export const getPublicProducts = async (buscar, idCategoria, idMarca, idModelo, 
 export const getPublicProductById = async (idProducto) => {
   const result = await query(`
     SELECT p.id_producto, p.codigo, p.nombre, p.descripcion, p.precio_venta, p.creado_en,
-      c.nombre AS categoria, m.nombre AS marca, mo.nombre AS modelo,
+      p.id_categoria, c.nombre AS categoria, m.nombre AS marca, mo.nombre AS modelo,
       CASE WHEN e.stock_actual > 0 THEN 'DISPONIBLE' ELSE 'NO_DISPONIBLE' END AS disponibilidad
     FROM electronica_az.producto p
     JOIN electronica_az.categoria c ON c.id_categoria = p.id_categoria
