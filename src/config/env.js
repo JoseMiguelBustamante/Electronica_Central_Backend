@@ -22,8 +22,8 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
   STRIPE_CURRENCY: z.string().trim().toLowerCase().length(3).default('bob'),
   STRIPE_CHECKOUT_EXPIRES_MINUTES: z.coerce.number().int().min(30).max(24 * 60).default(30),
-  PAYMENT_SUCCESS_URL: z.string().url().default('http://localhost:5173/carrito?pago=ok'),
-  PAYMENT_CANCEL_URL: z.string().url().default('http://localhost:5173/carrito?pago=cancel'),
+  PAYMENT_SUCCESS_URL: z.string().url().default('http://localhost:5173/pagos/exito'),
+  PAYMENT_CANCEL_URL: z.string().url().default('http://localhost:5173/pagos/cancelado'),
 });
 
 const parsed = envSchema.safeParse(process.env);
