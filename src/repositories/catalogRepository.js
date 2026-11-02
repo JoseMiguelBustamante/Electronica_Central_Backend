@@ -308,7 +308,7 @@ export const productExists = async (idProducto) => (
 export const getPublicProducts = async (buscar, idCategoria, idMarca, idModelo, limite, desplazamiento) => {
   const result = await query(`
     SELECT p.id_producto, p.codigo, p.nombre, p.descripcion, p.precio_venta, p.creado_en,
-      p.id_categoria, c.nombre AS categoria, m.nombre AS marca, mo.nombre AS modelo,
+      p.id_categoria, c.nombre AS categoria, p.id_marca, m.nombre AS marca, mo.nombre AS modelo,
       CASE WHEN e.stock_actual > 0 THEN 'DISPONIBLE' ELSE 'NO_DISPONIBLE' END AS disponibilidad,
       count(*) OVER() AS total
     FROM electronica_az.producto p
@@ -335,10 +335,15 @@ export const getPublicProducts = async (buscar, idCategoria, idMarca, idModelo, 
 };
 
 export const getPublicProductById = async (idProducto) => {
+  // stock_restante: solo si hay pocas unidades (<=5); no se expone el stock exacto alto.
   const result = await query(`
     SELECT p.id_producto, p.codigo, p.nombre, p.descripcion, p.precio_venta, p.creado_en,
-      p.id_categoria, c.nombre AS categoria, m.nombre AS marca, mo.nombre AS modelo,
-      CASE WHEN e.stock_actual > 0 THEN 'DISPONIBLE' ELSE 'NO_DISPONIBLE' END AS disponibilidad
+      p.id_categoria, c.nombre AS categoria, p.id_marca, m.nombre AS marca, mo.nombre AS modelo,
+      CASE WHEN e.stock_actual > 0 THEN 'DISPONIBLE' ELSE 'NO_DISPONIBLE' END AS disponibilidad,
+      CASE
+        WHEN e.stock_actual > 0 AND e.stock_actual <= 5 THEN e.stock_actual
+        ELSE NULL
+      END AS stock_restante
     FROM electronica_az.producto p
     JOIN electronica_az.categoria c ON c.id_categoria = p.id_categoria
     LEFT JOIN electronica_az.marca m ON m.id_marca = p.id_marca
