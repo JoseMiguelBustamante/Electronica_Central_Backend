@@ -10,6 +10,15 @@ export const listSales = async (estado, idCliente, limite, desplazamiento) => {
   const result = await query(`
     SELECT v.id_venta, v.fecha_hora, v.estado, v.id_cliente, v.id_usuario,
       c.nombre AS cliente_nombre,
+      coalesce((
+        SELECT round(sum(d.cantidad * d.precio_unitario), 2)
+        FROM electronica_az.detalle_venta d WHERE d.id_venta = v.id_venta
+      ), 0)::numeric AS total_venta,
+      coalesce((
+        SELECT sum(p.monto)
+        FROM electronica_az.pago p
+        WHERE p.id_venta = v.id_venta AND p.estado = 'CONFIRMADO'
+      ), 0)::numeric AS cobrado,
       count(*) OVER() AS total
     FROM electronica_az.venta v
     JOIN electronica_az.cliente c ON c.id_cliente = v.id_cliente

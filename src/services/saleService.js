@@ -179,7 +179,17 @@ export const listSalesService = async (queryParams, usuario) => {
   );
   const total = Number(rows[0]?.total ?? 0);
   return {
-    items: rows.map((row) => mapSale({ ...row, detalles: [], pagos: [] }, usuario)),
+    items: rows.map((row) => {
+      const mapped = mapSale({ ...row, detalles: [], pagos: [] }, usuario);
+      const totalVenta = Number(row.total_venta ?? 0);
+      const cobrado = Number(row.cobrado ?? 0);
+      return {
+        ...mapped,
+        total: totalVenta,
+        cobrado,
+        saldo: roundHalfUp2(totalVenta - cobrado),
+      };
+    }),
     total,
     pagina: queryParams.pagina,
     limite: queryParams.limite,
