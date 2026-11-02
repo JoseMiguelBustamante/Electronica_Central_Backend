@@ -100,6 +100,37 @@ const computeTotals = (detalles, pagos = []) => {
   return { total, cobrado, saldo: roundHalfUp2(total - cobrado) };
 };
 
+/** Texto legible para bitácora: productos, cantidades, montos y comprobante. */
+export const describeSaleForAudit = (mapped) => {
+  const lineas = (mapped.detalles ?? [])
+    .map((d) => `${d.codigo} ${d.nombre} x${d.cantidad} @Bs${d.precioUnitario}=Bs${d.subtotal}`)
+    .join(' | ');
+  const pagos = (mapped.pagos ?? [])
+    .filter((p) => p.estado === 'CONFIRMADO')
+    .map((p) => `${p.metodo} Bs${p.monto}`)
+    .join(', ');
+  const parts = [
+    `venta=${mapped.idVenta}`,
+    `cliente=${mapped.clienteNombre || mapped.idCliente}`,
+    `estado=${mapped.estado}`,
+    lineas ? `items=[${lineas}]` : 'items=[]',
+    `total=Bs${mapped.total}`,
+    `cobrado=Bs${mapped.cobrado}`,
+    `saldo=Bs${mapped.saldo}`,
+  ];
+  if (pagos) parts.push(`pagos=[${pagos}]`);
+  if (mapped.comprobante?.numero) parts.push(`comprobante=${mapped.comprobante.numero}`);
+  return parts.join(' ');
+};
+
+/** Resumen de salidas de inventario por venta confirmada. */
+export const describeSaleStockOut = (mapped) => {
+  const lineas = (mapped.detalles ?? [])
+    .map((d) => `SALIDA ${d.codigo} ${d.nombre} x${d.cantidad}`)
+    .join(' | ');
+  return `venta=${mapped.idVenta} movimiento_inventario=[${lineas || 'sin líneas'}]`;
+};
+
 const mapSale = (row, usuario) => {
   const includeCost = canSeeCost(usuario);
   const detalles = (row.detalles ?? []).map((d) => mapDetail(d, includeCost));
@@ -111,12 +142,17 @@ const mapSale = (row, usuario) => {
     estado: row.estado,
     idCliente: row.id_cliente,
     clienteNombre: row.cliente_nombre,
+    clienteDocumento: row.cliente_documento ?? null,
     idUsuario: row.id_usuario,
     detalles,
     pagos,
     total: totals.total,
     cobrado: totals.cobrado,
     saldo: totals.saldo,
+    resumenProductos: row.resumen_productos ?? null,
+    numeroComprobante: row.numero_comprobante
+      ?? row.comprobante?.numero
+      ?? null,
     comprobante: row.comprobante
       ? { numero: row.comprobante.numero, fechaEmision: row.comprobante.fecha_emision }
       : null,
@@ -188,6 +224,8 @@ export const listSalesService = async (queryParams, usuario) => {
         total: totalVenta,
         cobrado,
         saldo: roundHalfUp2(totalVenta - cobrado),
+        resumenProductos: row.resumen_productos || '',
+        numeroComprobante: row.numero_comprobante ?? null,
       };
     }),
     total,

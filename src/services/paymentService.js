@@ -15,14 +15,75 @@ import {
   rejectPayment,
   saveIdempotencyRecord,
 } from '../repositories/paymentRepository.js';
-import { getSaleById } from '../repositories/saleRepository.js';
+import { confirmSale, getSaleById } from '../repositories/saleRepository.js';
 import { addLog } from '../repositories/securityRepository.js';
 import { AppError } from '../utils/AppError.js';
 import { ceilToHalfStep, roundHalfUp2 } from './saleHelpers.js';
-import { computeTotals } from './saleService.js';
+import {
+  computeTotals,
+  describeSaleForAudit,
+  describeSaleStockOut,
+  getSaleService,
+} from './saleService.js';
 
 export const ONLINE_METHOD = 'EN_LINEA';
 export const PAYABLE_SALE_STATES = ['BORRADOR', 'CONFIRMADA'];
+
+/**
+ * En mostrador la venta nace BORRADOR; se confirma (baja stock) al cobrar.
+ * Stripe: tras webhook. Efectivo: al registrar el pago (strict → error si falla stock).
+ */
+const auditSaleConfirmation = async (idVenta, idUsuario) => {
+  try {
+    const mapped = await getSaleService(idVenta, {
+      id: idUsuario,
+      roles: ['ADMINISTRADOR'],
+    });
+    await addLog('VENTA_CONFIRMADA', describeSaleForAudit(mapped), 'OK', idUsuario, { tabla: 'venta' });
+    await addLog(
+      'MOVIMIENTO_SALIDA_VENTA',
+      describeSaleStockOut(mapped),
+      'OK',
+      idUsuario,
+      { tabla: 'movimiento_inventario' },
+    );
+  } catch (error) {
+    logger.warn('audit_venta_confirmada_fallo', { idVenta, message: error.message });
+  }
+};
+
+const ensureSaleConfirmedOnPayment = async (idVenta, idUsuario, { strict = false } = {}) => {
+  const sale = await getSaleById(idVenta);
+  if (!sale) {
+    if (strict) throw new AppError(errorCodes.NOT_FOUND);
+    return { confirmed: false };
+  }
+  if (sale.estado === 'CONFIRMADA') return { confirmed: false };
+  if (sale.estado !== 'BORRADOR') {
+    if (strict) {
+      throw new AppError(errorCodes.BUSINESS_RULE, 422, {
+        reason: 'SALE_NOT_PAYABLE',
+        estado: sale.estado,
+      });
+    }
+    return { confirmed: false, status: 'INVALID_STATE' };
+  }
+  const result = await confirmSale(idVenta, idUsuario);
+  if (result.status === 'OK') {
+    logger.info('venta_confirmada_por_pago', { idVenta });
+    await auditSaleConfirmation(idVenta, idUsuario);
+    return { confirmed: true };
+  }
+  logger.warn('venta_confirm_tras_pago_fallo', { idVenta, status: result.status });
+  if (strict) {
+    throw new AppError(errorCodes.BUSINESS_RULE, 422, {
+      reason: result.status,
+      idProducto: result.idProducto,
+      stockActual: result.stockActual,
+    });
+  }
+  return { confirmed: false, status: result.status };
+};
 
 const hashPayload = (payload) => createHash('sha256')
   .update(JSON.stringify(payload))
@@ -118,19 +179,37 @@ export const createPaymentService = async (idVenta, body, usuario) => {
     });
   }
 
+  // Efectivo: primero confirma venta (stock), luego registra y confirma el pago.
+  if (body.metodo === 'EFECTIVO') {
+    await ensureSaleConfirmedOnPayment(idVenta, usuario.id, { strict: true });
+  }
+
+  let row;
   try {
-    const row = await createPayment(
+    row = await createPayment(
       idVenta,
       usuario.id,
       monto,
       body.metodo,
       body.referenciaExterna,
     );
-    return mapPayment(row);
   } catch (error) {
     if (error.code === '23505') throw new AppError(errorCodes.CONFLICT, 409, { reason: 'DUPLICATE_REFERENCE' });
     throw error;
   }
+
+  if (body.metodo === 'EFECTIVO') {
+    const confirmed = await confirmPayment(row.id_pago, PAYABLE_SALE_STATES);
+    if (confirmed.status !== 'OK') {
+      throw new AppError(errorCodes.BUSINESS_RULE, 422, {
+        reason: confirmed.status,
+        estado: confirmed.estado,
+      });
+    }
+    return mapPayment(confirmed.pago);
+  }
+
+  return mapPayment(row);
 };
 
 export const confirmPaymentService = async (idPago, body, usuario) => {
@@ -167,6 +246,8 @@ export const confirmPaymentService = async (idPago, body, usuario) => {
       cobrado: result.confirmedBefore,
     });
   }
+
+  await ensureSaleConfirmedOnPayment(existing.id_venta, usuario.id);
 
   const data = mapPayment(result.pago);
   const raced = await persistIdempotency(
@@ -298,6 +379,17 @@ const settleCompletedSession = async (stripe, session) => {
   }
   if (pago.estado === 'RECHAZADO') {
     return refundUnapplicablePayment(stripe, pago, session, 'PAGO_RECHAZADO_ANTES');
+  }
+
+  // Stripe cobrado → confirma venta (stock) y luego el pago; si no hay stock, reembolsa.
+  const saleBefore = await getSaleById(pago.id_venta);
+  if (saleBefore?.estado === 'BORRADOR') {
+    const saleResult = await confirmSale(pago.id_venta, pago.id_usuario);
+    if (saleResult.status !== 'OK') {
+      return refundUnapplicablePayment(stripe, pago, session, saleResult.status);
+    }
+    logger.info('venta_confirmada_por_pago', { idVenta: pago.id_venta });
+    await auditSaleConfirmation(pago.id_venta, pago.id_usuario);
   }
 
   const result = await confirmPayment(pago.id_pago, PAYABLE_SALE_STATES);

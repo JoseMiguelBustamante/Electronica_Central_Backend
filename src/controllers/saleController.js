@@ -1,8 +1,11 @@
+import { audit } from '../services/auditService.js';
 import {
   anularSaleService,
   confirmSaleService,
   createSaleService,
   deliverSaleService,
+  describeSaleForAudit,
+  describeSaleStockOut,
   getComprobanteService,
   getSaleService,
   listSalesService,
@@ -39,6 +42,7 @@ export const getSaleController = async (req, res) => {
 export const createSaleController = async (req, res) => {
   try {
     const data = await createSaleService(req.validated.body, req.auth.usuario);
+    await audit(req, 'VENTA_CREADA', 'venta', describeSaleForAudit(data));
     return res.status(201).json({ data });
   } catch (error) {
     return sendError(res, error);
@@ -65,6 +69,10 @@ export const confirmSaleController = async (req, res) => {
       req.validated.body,
       req.auth.usuario,
     );
+    if (!result.cached && result.data) {
+      await audit(req, 'VENTA_CONFIRMADA', 'venta', describeSaleForAudit(result.data));
+      await audit(req, 'MOVIMIENTO_SALIDA_VENTA', 'movimiento_inventario', describeSaleStockOut(result.data));
+    }
     return res.status(result.statusHttp).json({ data: result.data });
   } catch (error) {
     return sendError(res, error);
@@ -78,6 +86,10 @@ export const anularSaleController = async (req, res) => {
       req.validated.body,
       req.auth.usuario,
     );
+    if (!result.cached && result.data) {
+      await audit(req, 'VENTA_ANULADA', 'venta', describeSaleForAudit(result.data));
+      await audit(req, 'MOVIMIENTO_ENTRADA_ANULACION', 'movimiento_inventario', describeSaleStockOut(result.data));
+    }
     return res.status(result.statusHttp).json({ data: result.data });
   } catch (error) {
     return sendError(res, error);
@@ -129,6 +141,14 @@ export const createSalePaymentController = async (req, res) => {
       req.validated.body,
       req.auth.usuario,
     );
+    const detallePago = [
+      `pago=${data.idPago}`,
+      `venta=${data.idVenta}`,
+      `metodo=${data.metodo}`,
+      `monto=Bs${data.monto}`,
+      `estado=${data.estado}`,
+    ].join(' ');
+    await audit(req, 'PAGO_REGISTRADO', 'pago', detallePago);
     return res.status(201).json({ data });
   } catch (error) {
     return sendError(res, error);

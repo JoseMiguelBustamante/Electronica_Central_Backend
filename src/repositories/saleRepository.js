@@ -19,6 +19,19 @@ export const listSales = async (estado, idCliente, limite, desplazamiento) => {
         FROM electronica_az.pago p
         WHERE p.id_venta = v.id_venta AND p.estado = 'CONFIRMADO'
       ), 0)::numeric AS cobrado,
+      coalesce((
+        SELECT string_agg(
+          p.codigo || ' ×' || trim(to_char(d.cantidad, 'FM999999990.###')) || ' ' || p.nombre,
+          ' · '
+          ORDER BY p.codigo
+        )
+        FROM electronica_az.detalle_venta d
+        JOIN electronica_az.producto p ON p.id_producto = d.id_producto
+        WHERE d.id_venta = v.id_venta
+      ), '') AS resumen_productos,
+      (
+        SELECT cp.numero FROM electronica_az.comprobante cp WHERE cp.id_venta = v.id_venta LIMIT 1
+      ) AS numero_comprobante,
       count(*) OVER() AS total
     FROM electronica_az.venta v
     JOIN electronica_az.cliente c ON c.id_cliente = v.id_cliente
