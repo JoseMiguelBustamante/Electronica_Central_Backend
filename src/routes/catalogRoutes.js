@@ -10,6 +10,7 @@ import {
   deleteBrandController,
   deleteCategoryController,
   deleteCompatibilityController,
+  deleteLocationController,
   deleteModelController,
   deleteUnitController,
   getCatalogFiltersController,
@@ -24,6 +25,7 @@ import {
   listUnitsController,
   updateBrandController,
   updateCategoryController,
+  updateLocationController,
   updateModelController,
   updateProductController,
   updateUnitController,
@@ -43,6 +45,7 @@ import {
   publicProductsQueryDto,
   updateBrandDto,
   updateCategoryDto,
+  updateLocationDto,
   updateModelDto,
   updateProductDto,
   updateUnitDto,
@@ -72,10 +75,12 @@ catalogRouter.post('/modelos', ...manageCatalog, validateBody(createModelDto), c
 catalogRouter.patch('/categorias/:id', ...manageCatalog, byId, validateBody(updateCategoryDto), updateCategoryController);
 catalogRouter.patch('/marcas/:id', ...manageCatalog, byId, validateBody(updateBrandDto), updateBrandController);
 catalogRouter.patch('/unidades/:id', ...manageCatalog, byId, validateBody(updateUnitDto), updateUnitController);
+catalogRouter.patch('/ubicaciones/:id', ...manageCatalog, byId, validateBody(updateLocationDto), updateLocationController);
 catalogRouter.patch('/modelos/:id', ...manageCatalog, byId, validateBody(updateModelDto), updateModelController);
 catalogRouter.delete('/categorias/:id', ...manageCatalog, byId, deleteCategoryController);
 catalogRouter.delete('/marcas/:id', ...manageCatalog, byId, deleteBrandController);
 catalogRouter.delete('/unidades/:id', ...manageCatalog, byId, deleteUnitController);
+catalogRouter.delete('/ubicaciones/:id', ...manageCatalog, byId, deleteLocationController);
 catalogRouter.delete('/modelos/:id', ...manageCatalog, byId, deleteModelController);
 
 catalogRouter.get('/productos', ...manageCatalog, validateQuery(adminProductsQueryDto), listAdminProductsController);

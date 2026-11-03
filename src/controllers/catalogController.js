@@ -9,6 +9,7 @@ import {
   deleteBrandService,
   deleteCategoryService,
   deleteCompatibilityService,
+  deleteLocationService,
   deleteModelService,
   deleteUnitService,
   getCatalogFiltersService,
@@ -23,6 +24,7 @@ import {
   listUnitsService,
   updateBrandService,
   updateCategoryService,
+  updateLocationService,
   updateModelService,
   updateProductService,
   updateUnitService,
@@ -71,11 +73,13 @@ export const createProductController = createCatalogController(createProductServ
 export const updateCategoryController = updateCatalogController(updateCategoryService, 'CATEGORIA_EDITADA', 'categoria');
 export const updateBrandController = updateCatalogController(updateBrandService, 'MARCA_EDITADA', 'marca');
 export const updateUnitController = updateCatalogController(updateUnitService, 'UNIDAD_EDITADA', 'unidad_medida');
+export const updateLocationController = updateCatalogController(updateLocationService, 'UBICACION_EDITADA', 'ubicacion');
 export const updateModelController = updateCatalogController(updateModelService, 'MODELO_EDITADO', 'modelo');
 
 export const deleteCategoryController = deleteCatalogController(deleteCategoryService, 'CATEGORIA_ELIMINADA', 'categoria');
 export const deleteBrandController = deleteCatalogController(deleteBrandService, 'MARCA_ELIMINADA', 'marca');
 export const deleteUnitController = deleteCatalogController(deleteUnitService, 'UNIDAD_ELIMINADA', 'unidad_medida');
+export const deleteLocationController = deleteCatalogController(deleteLocationService, 'UBICACION_ELIMINADA', 'ubicacion');
 export const deleteModelController = deleteCatalogController(deleteModelService, 'MODELO_ELIMINADO', 'modelo');
 
 export const updateProductController = async (req, res) => {

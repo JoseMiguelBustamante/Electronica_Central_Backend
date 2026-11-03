@@ -57,6 +57,12 @@ export const createLocationDto = z.object({
   estante: nameDto,
 });
 
+export const updateLocationDto = nonEmpty(z.object({
+  codigo: nameDto.optional(),
+  pasillo: nameDto.optional(),
+  estante: nameDto.optional(),
+}));
+
 export const createModelDto = z.object({
   nombre: nameDto,
   descripcion: optionalDescriptionDto,

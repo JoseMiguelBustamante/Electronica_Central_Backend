@@ -94,6 +94,11 @@ export const updateUnit = (id, data) => updateColumns(
   { nombre: 'nombre', simbolo: 'simbolo', permiteFraccion: 'permite_fraccion' }, data,
 );
 
+export const updateLocation = (id, data) => updateColumns(
+  plainClient, 'ubicacion', 'id_ubicacion', id,
+  { codigo: 'codigo', pasillo: 'pasillo', estante: 'estante' }, data,
+);
+
 /** Changing a model's brand would break products that point to (marca, modelo); refuse it while in use. */
 export const updateModel = (id, data) => withTransaction(async (client) => {
   if (data.idMarca) {
@@ -126,6 +131,11 @@ export const deleteBrand = (id) => query(
 
 export const deleteUnit = (id) => query(
   'DELETE FROM electronica_az.unidad_medida WHERE id_unidad_medida = $1 RETURNING *',
+  [id],
+);
+
+export const deleteLocation = (id) => query(
+  'DELETE FROM electronica_az.ubicacion WHERE id_ubicacion = $1 RETURNING *',
   [id],
 );
 

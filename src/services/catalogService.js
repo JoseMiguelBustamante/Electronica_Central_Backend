@@ -10,6 +10,7 @@ import {
   deleteBrand,
   deleteCategory,
   deleteCompatibility,
+  deleteLocation,
   deleteModel,
   deleteUnit,
   getCatalogFilters,
@@ -25,6 +26,7 @@ import {
   productExists,
   updateBrand,
   updateCategory,
+  updateLocation,
   updateModel,
   updateProduct,
   updateUnit,
@@ -98,6 +100,7 @@ export const createModelService = ({ nombre, descripcion, idMarca }) => (
 export const updateCategoryService = (id, data) => getUpdatedRow(updateCategory, id, data);
 export const updateBrandService = (id, data) => getUpdatedRow(updateBrand, id, data);
 export const updateUnitService = (id, data) => getUpdatedRow(updateUnit, id, data);
+export const updateLocationService = (id, data) => getUpdatedRow(updateLocation, id, data);
 export const updateModelService = (id, data) => getUpdatedRow(updateModel, id, data);
 
 export const deleteCategoryService = (id) => deleteRow(
@@ -108,6 +111,9 @@ export const deleteBrandService = (id) => deleteRow(
 );
 export const deleteUnitService = (id) => deleteRow(
   deleteUnit, id, 'La unidad de medida está en uso por productos.',
+);
+export const deleteLocationService = (id) => deleteRow(
+  deleteLocation, id, 'La ubicación está en uso por productos; reasignalos antes de eliminarla.',
 );
 export const deleteModelService = (id) => deleteRow(
   deleteModel, id, 'El modelo está en uso por productos o compatibilidades.',

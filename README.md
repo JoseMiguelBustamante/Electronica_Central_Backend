@@ -58,6 +58,20 @@ Detalle: `scripts/seed/README.md`.
 - Perfil académico Ciclo 2: `docs/PerfilGrupo14_2doCiclo.docx`
 - Verificación operacional vs Ciclo 2: `docs/ciclo-2-verificacion.md`
 
+## Correo SMTP (recuperación de contraseña)
+
+Sin `SMTP_URL`, `/api/auth/recuperar` solo deja el link en el log (y `debugLink` fuera de producción).
+
+Con SMTP:
+
+```env
+SMTP_URL=smtp://usuario:clave@smtp.ejemplo.com:587
+MAIL_FROM=Electrónica Central AZ <noreply@tudominio.com>
+FRONTEND_ORIGIN=https://electronica.187.127.19.244.sslip.io
+```
+
+En Dokploy (`electronica-api`) agregá esas variables y redesplegá. El registro de cliente **no** envía correo de bienvenida; el SMTP se usa para **olvidé mi contraseña**.
+
 ## Product images (storefront)
 
 Photos are **not** in the database. Drop files named with the product code into `media/productos/`:

@@ -19,8 +19,10 @@ import {
   updatePassword,
 } from '../repositories/authRepository.js';
 import { addLog } from '../repositories/securityRepository.js';
+import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 import { logger } from '../lib/logger.js';
+import { sendMail } from '../lib/mailer.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { createSessionToken, hashToken } from '../utils/token.js';
 
@@ -186,20 +188,45 @@ export const requestPasswordRecoveryService = async ({ correo }) => {
   const expiraEn = new Date(Date.now() + RECOVERY_HOURS * 60 * 60 * 1000);
   await createRecoveryToken(user.id_usuario, hashToken(token), expiraEn);
 
-  const front = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173').split(',')[0].trim();
-  const link = `${front}/restablecer?token=${encodeURIComponent(token)}`;
+  const link = `${env.FRONTEND_ORIGIN}/restablecer?token=${encodeURIComponent(token)}`;
+  const texto = [
+    'Recuperación de contraseña — Electrónica Central AZ',
+    '',
+    `Hola ${user.nombre_usuario},`,
+    '',
+    'Pediste restablecer tu contraseña. Abrí este enlace (válido 1 hora):',
+    link,
+    '',
+    'Si no fuiste vos, ignorá este correo.',
+  ].join('\n');
 
-  const smtp = process.env.SMTP_URL?.trim();
-  if (smtp) {
-    // Optional: wire a real SMTP client later. Keep the contract stable.
-    logger.info('password_recovery_email_queued', { correo: user.correo });
-  } else {
-    logger.info('password_recovery_link', { correo: user.correo, link, expiraEn });
+  try {
+    const result = await sendMail({
+      to: user.correo,
+      subject: 'Restablecer contraseña — Electrónica Central AZ',
+      text: texto,
+      html: `<p>Hola <strong>${user.nombre_usuario}</strong>,</p>
+<p>Pediste restablecer tu contraseña. El enlace vale 1 hora:</p>
+<p><a href="${link}">Restablecer contraseña</a></p>
+<p>Si no fuiste vos, ignorá este correo.</p>`,
+    });
+    if (result.skipped) {
+      logger.info('password_recovery_link', { correo: user.correo, link, expiraEn });
+    }
+  } catch (error) {
+    logger.error('password_recovery_email_failed', {
+      correo: user.correo,
+      message: error instanceof Error ? error.message : 'unknown',
+    });
+    // Keep anti-enumeration: still return generic; link remains usable from logs in non-prod.
+    if (env.NODE_ENV !== 'production') {
+      logger.info('password_recovery_link', { correo: user.correo, link, expiraEn });
+    }
   }
 
   await addLog('RECUPERACION_SOLICITADA', user.id_usuario, 'OK', user.id_usuario);
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (env.NODE_ENV !== 'production') {
     return { ...generic, debugToken: token, debugLink: link };
   }
   return generic;
