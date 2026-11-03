@@ -10,6 +10,7 @@ import purchaseRouter from './routes/purchaseRoutes.js';
 import paymentRouter from './routes/paymentRoutes.js';
 import reportRouter from './routes/reportRoutes.js';
 import requestRouter from './routes/requestRoutes.js';
+import returnRouter from './routes/returnRoutes.js';
 import saleRouter from './routes/saleRoutes.js';
 import supplierRouter from './routes/supplierRoutes.js';
 import securityRouter from './routes/securityRoutes.js';
@@ -54,6 +55,7 @@ export const createApp = () => {
   app.use('/api/compras', purchaseRouter);
   app.use('/api/ventas', saleRouter);
   app.use('/api/pagos', paymentRouter);
+  app.use('/api/devoluciones', returnRouter);
   app.use('/api/solicitudes', requestRouter);
   app.use('/api/reportes', reportRouter);
   app.use('/api', securityRouter);
