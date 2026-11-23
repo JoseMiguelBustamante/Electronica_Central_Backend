@@ -24,7 +24,7 @@ describe('interpretarInstruccionReporte', () => {
     expect(url).toBe('https://example.test/v1/chat/completions');
     expect(options.headers.Authorization).toBe('Bearer test-key');
     const body = JSON.parse(options.body);
-    expect(body).toMatchObject({ model: 'test-model', temperature: 0, max_tokens: 300 });
+    expect(body).toMatchObject({ model: 'test-model', temperature: 0, max_tokens: 2000 });
     expect(body.messages[0].content).toContain('2026-11-22');
     for (const phrase of ['America/La_Paz', 'ventas', 'ganancias', 'inventario', 'rotacion', 'esta semana', 'lunes', 'este mes', 'este año', 'hoy', 'ayer', 'últimos 30 días', 'explícitas']) {
       expect(body.messages[0].content).toContain(phrase);
@@ -57,13 +57,13 @@ describe('interpretarInstruccionReporte', () => {
     fetchMock.mockResolvedValue({ ok: false, status: 500 });
     await expect(interpretarInstruccionReporte('ventas hoy')).rejects.toMatchObject({ code: errorCodes.AI_UNAVAILABLE, statusCode: 503 });
   });
-  test('15s timeout -> AI_UNAVAILABLE and aborts fetch', async () => {
+  test('30s timeout -> AI_UNAVAILABLE and aborts fetch', async () => {
     vi.useFakeTimers();
     fetchMock.mockImplementation((_url, { signal }) => new Promise((_resolve, reject) => {
       signal.addEventListener('abort', () => reject(new Error('aborted')));
     }));
     const assertion = expect(interpretarInstruccionReporte('ventas hoy')).rejects.toMatchObject({ code: errorCodes.AI_UNAVAILABLE, statusCode: 503 });
-    await vi.advanceTimersByTimeAsync(15000);
+    await vi.advanceTimersByTimeAsync(30000);
     await assertion;
     expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true);
   });

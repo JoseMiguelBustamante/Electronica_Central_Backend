@@ -17,7 +17,7 @@ export const interpretarInstruccionReporte = async (texto) => {
   if (!config.NAN_BUILDERS_API_KEY) throw new AppError(errorCodes.AI_NOT_CONFIGURED);
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15_000);
+  const timer = setTimeout(() => controller.abort(), 30_000);
   let payload;
   try {
     const response = await fetch(`${config.NAN_BUILDERS_BASE_URL.replace(/\/+$/, '')}/chat/completions`, {
@@ -30,7 +30,7 @@ export const interpretarInstruccionReporte = async (texto) => {
       body: JSON.stringify({
         model: config.NAN_BUILDERS_MODEL,
         temperature: 0,
-        max_tokens: 300,
+        max_tokens: 2000,
         messages: [
           { role: 'system', content: systemPrompt(formatLaPazDate(new Date())) },
           { role: 'user', content: texto },
