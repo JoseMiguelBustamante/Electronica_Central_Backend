@@ -23,7 +23,7 @@ const sendReport = async (res, formato, filename, data, excelSpec, pdfTitle) => 
     return res.status(200).send(buffer);
   }
   if (formato === 'pdf') {
-    const buffer = await buildReportPdfBuffer(pdfTitle, data);
+    const buffer = await buildReportPdfBuffer(pdfTitle, data, excelSpec);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}.pdf"`);
     return res.status(200).send(buffer);
