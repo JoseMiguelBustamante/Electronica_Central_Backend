@@ -226,4 +226,47 @@ describe('reports flow with PostgreSQL', () => {
     expect(comprobantePdf.headers['content-type']).toMatch(/pdf/);
     expect(comprobantePdf.body.toString('utf8', 0, 4)).toBe('%PDF');
   });
+
+  test('ventas formato=csv returns CSV export with header and item rows', async () => {
+    const csv = await request(app)
+      .get('/api/reportes/ventas')
+      .query({ desde: today, hasta: today, formato: 'csv' })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .buffer(true)
+      .parse((res, callback) => {
+        const data = [];
+        res.on('data', (chunk) => data.push(chunk));
+        res.on('end', () => callback(null, Buffer.concat(data)));
+      });
+    expect(csv.status).toBe(200);
+    expect(csv.headers['content-type']).toMatch(/text\/csv/);
+    expect(csv.headers['content-disposition']).toContain('reporte-ventas.csv');
+    const text = csv.body.toString('utf8');
+    expect(text.charCodeAt(0)).toBe(0xfeff); // UTF-8 BOM for Excel
+    const lines = text.replace(/^\uFEFF/, '').split(/\r\n/).filter(Boolean);
+    expect(lines[0]).toBe('Id,Fecha,Estado,Vendedor,Cliente,Total,Cobrado,Saldo');
+    expect(lines.length).toBeGreaterThanOrEqual(2);
+    expect(text).toContain(String(saleId));
+    expect(lines.some((line) => line.includes('CONFIRMADA'))).toBe(true);
+  });
+
+  test('inventario formato=csv returns CSV export reusing Excel columns', async () => {
+    const csv = await request(app)
+      .get('/api/reportes/inventario')
+      .query({ fechaCorte: today, formato: 'csv' })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .buffer(true)
+      .parse((res, callback) => {
+        const data = [];
+        res.on('data', (chunk) => data.push(chunk));
+        res.on('end', () => callback(null, Buffer.concat(data)));
+      });
+    expect(csv.status).toBe(200);
+    expect(csv.headers['content-type']).toMatch(/text\/csv/);
+    expect(csv.headers['content-disposition']).toContain('reporte-inventario.csv');
+    const text = csv.body.toString('utf8').replace(/^\uFEFF/, '');
+    expect(text.split(/\r\n/)[0]).toBe('Codigo,Producto,Ubicacion,Stock corte,Minimo,Costo prom,Valoracion,Alerta');
+    expect(text).toContain(`REP-SKU-${suffix}`);
+    expect(text).toContain('18');
+  });
 });

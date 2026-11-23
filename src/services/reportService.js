@@ -134,3 +134,32 @@ export const buildExcelBuffer = async (sheetName, columns, rows) => {
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
 };
+
+/** America/La_Paz wall-clock datetime for CSV cells: YYYY-MM-DD HH:mm:ss */
+const formatLaPazDateTime = (date) => new Intl.DateTimeFormat('sv-SE', {
+  timeZone: 'America/La_Paz',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+}).format(date);
+
+/** RFC 4180 field: quote only when needed, double inner quotes; Dates in La Paz. */
+const escapeCsvValue = (value) => {
+  if (value === null || value === undefined) return '';
+  const text = value instanceof Date
+    ? formatLaPazDateTime(value)
+    : typeof value === 'object' ? JSON.stringify(value) : String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+};
+
+export const buildCsvBuffer = (columns, rows) => {
+  const lines = [columns.map((column) => escapeCsvValue(column.header)).join(',')];
+  for (const row of rows) {
+    lines.push(columns.map((column) => escapeCsvValue(row?.[column.key])).join(','));
+  }
+  return Buffer.from(`\uFEFF${lines.join('\r\n')}\r\n`, 'utf8');
+};

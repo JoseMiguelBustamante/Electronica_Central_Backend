@@ -6,7 +6,7 @@ const uuidDto = z.string().uuid();
 export const reportPeriodQueryDto = z.object({
   desde: dateDto,
   hasta: dateDto,
-  formato: z.enum(['json', 'xlsx', 'pdf']).default('json'),
+  formato: z.enum(['json', 'xlsx', 'pdf', 'csv']).default('json'),
 });
 
 export const reportVentasQueryDto = reportPeriodQueryDto.extend({
@@ -16,5 +16,5 @@ export const reportVentasQueryDto = reportPeriodQueryDto.extend({
 
 export const reportInventarioQueryDto = z.object({
   fechaCorte: dateDto,
-  formato: z.enum(['json', 'xlsx', 'pdf']).default('json'),
+  formato: z.enum(['json', 'xlsx', 'pdf', 'csv']).default('json'),
 });

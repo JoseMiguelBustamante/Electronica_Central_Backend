@@ -1,4 +1,5 @@
 import {
+  buildCsvBuffer,
   buildExcelBuffer,
   getGananciasReportService,
   getInventarioReportService,
@@ -13,6 +14,12 @@ const sendReport = async (res, formato, filename, data, excelSpec, pdfTitle) => 
     const buffer = await buildExcelBuffer(excelSpec.sheet, excelSpec.columns, excelSpec.rows);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}.xlsx"`);
+    return res.status(200).send(buffer);
+  }
+  if (formato === 'csv') {
+    const buffer = buildCsvBuffer(excelSpec.columns, excelSpec.rows);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
     return res.status(200).send(buffer);
   }
   if (formato === 'pdf') {

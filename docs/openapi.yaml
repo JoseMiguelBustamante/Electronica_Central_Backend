@@ -3093,6 +3093,7 @@ paths:
               - json
               - xlsx
               - pdf
+              - csv
             default: json
       responses:
         "200":
@@ -3142,6 +3143,7 @@ paths:
               - json
               - xlsx
               - pdf
+              - csv
             default: json
       responses:
         "200":
@@ -3184,6 +3186,7 @@ paths:
               - json
               - xlsx
               - pdf
+              - csv
             default: json
       responses:
         "200":
@@ -3233,6 +3236,7 @@ paths:
               - json
               - xlsx
               - pdf
+              - csv
             default: json
       responses:
         "200":
