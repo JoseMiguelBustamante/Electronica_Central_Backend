@@ -10,9 +10,15 @@ export const errorCodes = {
   BUSINESS_RULE: 'UE001',
   INTERNAL_ERROR: 'SE001',
   SERVICE_UNAVAILABLE: 'SU001',
+  AI_NOT_CONFIGURED: 'AI001',
+  AI_UNAVAILABLE: 'AI002',
+  AI_INVALID_RESPONSE: 'AI003',
 };
 
 export const errorCatalog = {
+  [errorCodes.AI_NOT_CONFIGURED]: { statusHttp: 503, message: 'Intérprete de reportes no configurado' },
+  [errorCodes.AI_UNAVAILABLE]: { statusHttp: 503, message: 'Intérprete de reportes no disponible' },
+  [errorCodes.AI_INVALID_RESPONSE]: { statusHttp: 502, message: 'Respuesta inválida del intérprete de reportes' },
   [errorCodes.VALIDATION_ERROR]: { statusHttp: 400, message: 'Datos de solicitud inválidos' },
   [errorCodes.INVALID_CREDENTIALS]: { statusHttp: 401, message: 'Credenciales o sesión inválidas' },
   [errorCodes.SESSION_EXPIRED]: { statusHttp: 401, message: 'Sesión expirada' },

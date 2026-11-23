@@ -3048,6 +3048,76 @@ paths:
                     - CANCELADA
             example:
               estado: ATENDIDA
+  /api/reportes/interpretar:
+    post:
+      operationId: interpretarReporte
+      summary: Interpretar una instrucción de reporte con IA
+      tags:
+        - Reportes
+      description: |
+        Requiere permiso `REPORTES_CONSULTAR`. Solo interpreta texto a parámetros;
+        no consulta ni modifica datos de reportes. Fechas en America/La_Paz.
+        Tipos ventas, ganancias y rotacion requieren desde/hasta; inventario requiere
+        fechaCorte (fecha solicitada o hoy). El rango se limita a dos años calendario.
+        Admite esta semana (lunes a hoy), este mes, este año, hoy, ayer,
+        últimos 30 días y fechas explícitas. El título es opcional.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [texto]
+              properties:
+                texto:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+                  example: ventas este mes
+      responses:
+        "200":
+          description: Parámetros interpretados y validados
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [tipo]
+                    properties:
+                      tipo:
+                        type: string
+                        enum: [ventas, ganancias, inventario, rotacion]
+                      desde:
+                        type: string
+                        format: date
+                      hasta:
+                        type: string
+                        format: date
+                      fechaCorte:
+                        type: string
+                        format: date
+                      titulo:
+                        type: string
+              example:
+                data:
+                  tipo: ventas
+                  desde: "2026-11-01"
+                  hasta: "2026-11-22"
+        "400":
+          description: VALIDATION_ERROR (BR001), texto inválido o desde posterior a hasta
+        "401":
+          description: Autenticación requerida (AU003) o sesión inválida/expirada (AU001/AU002)
+        "403":
+          description: Acceso denegado (FB001), falta REPORTES_CONSULTAR
+        "502":
+          description: AI_INVALID_RESPONSE (AI003), JSON o parámetros del LLM inválidos
+        "503":
+          description: AI_NOT_CONFIGURED (AI001), sin API key; AI_UNAVAILABLE (AI002), fallo del proveedor o timeout de 15 segundos
   /api/reportes/ventas:
     get:
       operationId: reportVentas
