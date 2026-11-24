@@ -46,9 +46,22 @@ T3 [S1,S5] frontend: interpretarReporteVoz() en reporteService.ts + hook de mic
 T4 [S1,S3,S5] frontend: botón mic en Reportes + dispara generar() + TTS resumen +
 degradación sin SpeechRecognition + README — commit
 T5 [S2] usuario agrega NAN_BUILDERS_API_KEY a .env local y a Dokploy; smoke E2E
-con voz real; verificar deploy — bloqueado hasta T5 keys
+con voz real; verificar deploy — bloqueado hasta T5 keys [DONE: key puesta,
+bugfix max_tokens f01dd09, e2e validado por el usuario]
+T6 [S7] contexto conversacional sin estado: el frontend reenvía la última
+interpretación; el LLM resuelve referencias relativas (el mes anterior, esa
+misma semana) contra ese contexto — commit
+T7 [S8] voz natural: selección de la mejor voz es disponible (Google español /
+Natural > es-*), cadencia con puntuación, montos en palabras + "bolivianos";
+el frontend pasa contexto — commit
 
 ## Log
+
+L3 (2026-11-23, pedido del usuario): "Si quiero que sea interactivo como
+tendría que ser? Y también cambiar el tipo de voz que sea más natural".
+Decisión: contexto sin estado (cliente reenvía contexto; el server no guarda
+memoria), follow-up permite cambiar de tipo conservando el periodo; voz local
+mejorada (no se agregan proveedores TTS nuevos).
 
 L1 (petición original): "oki ahora lko que tenemos que haces es agregar la
 generacion de reportes por ai con vos, que nos ayude en la generacion de

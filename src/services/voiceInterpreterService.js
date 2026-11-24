@@ -1,6 +1,6 @@
 import { getVoiceInterpreterEnv } from '../config/env.js';
 import { errorCodes } from '../config/errorCodes.js';
-import { reportVoiceResultDto } from '../dto/reportVoice.dto.js';
+import { reportVoiceContextDto, reportVoiceResultDto } from '../dto/reportVoice.dto.js';
 import { AppError } from '../utils/AppError.js';
 import { formatLaPazDate } from './reportHelpers.js';
 
@@ -12,7 +12,12 @@ Todas las fechas deben ser ISO YYYY-MM-DD. Para inventario devuelve fechaCorte c
 Para los demás tipos desde y hasta son obligatorios: esta semana = lunes de la semana actual hasta hoy; este mes = primer día del mes hasta hoy; este año = 1 de enero hasta hoy; hoy = hoy a hoy; ayer = ayer a ayer; últimos 30 días = hoy menos 29 días hasta hoy. Respeta fechas explícitas.
 No devuelvas campos vacíos. Un titulo opcional debe ser breve.`;
 
-export const interpretarInstruccionReporte = async (texto) => {
+export const interpretarInstruccionReporte = async (texto, contexto) => {
+  if (contexto !== undefined) {
+    const parsed = reportVoiceContextDto.safeParse(contexto);
+    if (!parsed.success) throw new AppError(errorCodes.VALIDATION_ERROR, 400, parsed.error.flatten());
+    contexto = parsed.data;
+  }
   const config = getVoiceInterpreterEnv();
   if (!config.NAN_BUILDERS_API_KEY) throw new AppError(errorCodes.AI_NOT_CONFIGURED);
 
@@ -33,6 +38,10 @@ export const interpretarInstruccionReporte = async (texto) => {
         max_tokens: 2000,
         messages: [
           { role: 'system', content: systemPrompt(formatLaPazDate(new Date())) },
+          ...(contexto === undefined ? [] : [{
+            role: 'user',
+            content: `Contexto del último reporte pedido: ${JSON.stringify(contexto)}. Si el nuevo pedido se refiere a un periodo relativo al anterior ("el mes anterior", "esa misma semana", "ese trimestre", "el año pasado"), calcula las fechas a partir de ese contexto; el nuevo tipo puede cambiar ("y ganancias de ese mes?").`,
+          }]),
           { role: 'user', content: texto },
         ],
       }),

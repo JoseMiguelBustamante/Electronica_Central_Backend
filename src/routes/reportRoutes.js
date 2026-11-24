@@ -22,7 +22,7 @@ const consultReports = [authenticate, requirePermissions('REPORTES_CONSULTAR')];
 
 reportRouter.post('/interpretar', ...consultReports, validateBody(reportVoiceBodyDto), async (req, res) => {
   try {
-    return res.status(200).json({ data: await interpretarInstruccionReporte(req.validated.body.texto) });
+    return res.status(200).json({ data: await interpretarInstruccionReporte(req.validated.body.texto, req.validated.body.contexto) });
   } catch (error) {
     return sendError(res, error);
   }

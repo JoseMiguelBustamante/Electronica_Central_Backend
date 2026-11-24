@@ -3061,6 +3061,9 @@ paths:
         fechaCorte (fecha solicitada o hoy). El rango se limita a dos años calendario.
         Admite esta semana (lunes a hoy), este mes, este año, hoy, ayer,
         últimos 30 días y fechas explícitas. El título es opcional.
+        El cliente puede reenviar contexto del último reporte para resolver periodos
+        relativos (el mes anterior, esa misma semana, ese trimestre, el año pasado)
+        y cambiar el tipo conservando el periodo. El servidor no guarda contexto.
       security:
         - bearerAuth: []
       requestBody:
@@ -3076,6 +3079,30 @@ paths:
                   minLength: 3
                   maxLength: 500
                   example: ventas este mes
+                contexto:
+                  type: object
+                  description: Último reporte pedido, reenviado por el cliente de forma opcional.
+                  required: [tipo, desde, hasta]
+                  properties:
+                    tipo:
+                      type: string
+                      enum: [ventas, ganancias, inventario, rotacion]
+                    desde:
+                      type: string
+                      format: date
+                      pattern: '^\d{4}-\d{2}-\d{2}$'
+                    hasta:
+                      type: string
+                      format: date
+                      pattern: '^\d{4}-\d{2}-\d{2}$'
+                    fechaCorte:
+                      type: string
+                      format: date
+                      pattern: '^\d{4}-\d{2}-\d{2}$'
+                  example:
+                    tipo: ventas
+                    desde: "2026-11-01"
+                    hasta: "2026-11-23"
       responses:
         "200":
           description: Parámetros interpretados y validados
@@ -3109,7 +3136,7 @@ paths:
                   desde: "2026-11-01"
                   hasta: "2026-11-22"
         "400":
-          description: VALIDATION_ERROR (BR001), texto inválido o desde posterior a hasta
+          description: VALIDATION_ERROR (BR001), texto o contexto inválido o desde posterior a hasta
         "401":
           description: Autenticación requerida (AU003) o sesión inválida/expirada (AU001/AU002)
         "403":

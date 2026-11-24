@@ -34,6 +34,55 @@ describe('interpretarInstruccionReporte', () => {
     await interpretarInstruccionReporte('ventas hoy');
     expect(JSON.parse(fetchMock.mock.calls[1][1].body).messages[0].content).toContain('2026-11-23');
   });
+  test('includes context JSON and today in messages for relative follow-ups', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-24T02:00:00Z'));
+    const contexto = { tipo: 'ventas', desde: '2026-11-01', hasta: '2026-11-23' };
+    await interpretarInstruccionReporte('y ganancias de ese mes?', contexto);
+    const { messages, max_tokens } = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(max_tokens).toBe(2000);
+    expect(messages[0].content).toContain('Hoy es 2026-11-23 en America/La_Paz');
+    expect(messages[0].content).toContain('SOLO un objeto JSON');
+    expect(messages).toContainEqual(expect.objectContaining({
+      role: 'user', content: expect.stringContaining(JSON.stringify(contexto)),
+    }));
+    const contextMessage = messages.find(({ content }) => content.includes('Contexto del último reporte pedido:'));
+    for (const phrase of ['el mes anterior', 'esa misma semana', 'ese trimestre', 'el año pasado', 'y ganancias de ese mes?']) {
+      expect(contextMessage.content).toContain(phrase);
+    }
+    expect(messages.at(-1)).toEqual({ role: 'user', content: 'y ganancias de ese mes?' });
+  });
+  test('accepts el mes anterior resolved against the supplied context', async () => {
+    const contexto = { tipo: 'ventas', desde: '2026-11-01', hasta: '2026-11-23' };
+    const previousMonth = { tipo: 'ventas', desde: '2026-10-01', hasta: '2026-10-31' };
+    fetchMock.mockResolvedValue(reply(JSON.stringify(previousMonth)));
+    expect(await interpretarInstruccionReporte('el mes anterior', contexto)).toEqual(previousMonth);
+  });
+  test('accepts a changed report type while preserving the contextual period', async () => {
+    const changedType = { ...period, tipo: 'ganancias' };
+    fetchMock.mockResolvedValue(reply(JSON.stringify(changedType)));
+    expect(await interpretarInstruccionReporte('y ganancias de ese mes?', period)).toEqual(changedType);
+  });
+  test.each([
+    { ...period, tipo: 'compras' },
+    { ...period, desde: '2026-02-30' },
+    { ...period, hasta: '23/11/2026' },
+    { tipo: 'ventas', desde: '2026-11-01' },
+    { ...period, fechaCorte: 'invalid' },
+  ])('rejects invalid context before fetch: %j', async (contexto) => {
+    await expect(interpretarInstruccionReporte('el mes anterior', contexto)).rejects.toMatchObject({
+      code: errorCodes.VALIDATION_ERROR, statusCode: 400,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  test('no-context calls omit the context marker even after a contextual call', async () => {
+    await interpretarInstruccionReporte('el mes anterior', period);
+    await interpretarInstruccionReporte('ventas hoy');
+    const { messages } = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(messages).toHaveLength(2);
+    expect(JSON.stringify(messages)).not.toContain('Contexto del último reporte pedido:');
+    expect(messages[1]).toEqual({ role: 'user', content: 'ventas hoy' });
+  });
   test('uses default base URL and model', async () => {
     vi.stubEnv('NAN_BUILDERS_BASE_URL', undefined);
     vi.stubEnv('NAN_BUILDERS_MODEL', undefined);

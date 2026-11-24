@@ -62,6 +62,27 @@ describe('report voice HTTP flow (session service isolated)', () => {
     expect(response.body).toEqual({ data: result });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+  test('200 contextual follow-up forwards context and returns the changed report type', async () => {
+    const contexto = { tipo: 'ventas', desde: '2026-11-01', hasta: '2026-11-23', fechaCorte: '2026-11-23' };
+    const followUp = { tipo: 'ganancias', desde: contexto.desde, hasta: contexto.hasta };
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(followUp) } }] }) });
+    const response = await request(app).post('/api/reportes/interpretar')
+      .set('Authorization', 'Bearer admin-session').send({ texto: 'y ganancias de ese mes?', contexto });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ data: followUp });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).messages).toContainEqual(expect.objectContaining({
+      role: 'user', content: expect.stringContaining(JSON.stringify(contexto)),
+    }));
+  });
+  test('400 invalid context tipo without invoking AI', async () => {
+    const response = await request(app).post('/api/reportes/interpretar')
+      .set('Authorization', 'Bearer admin-session')
+      .send({ texto: 'el mes anterior', contexto: { ...result, tipo: 'compras' } });
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe(errorCodes.VALIDATION_ERROR);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
   test.each([
     ['missing key', 503, 'AI_NOT_CONFIGURED'],
     ['offline', 503, 'AI_UNAVAILABLE'],
