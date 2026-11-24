@@ -212,6 +212,8 @@ export const listSalesService = async (queryParams, usuario) => {
     queryParams.idCliente,
     queryParams.limite,
     (queryParams.pagina - 1) * queryParams.limite,
+    queryParams.comprobante,
+    queryParams.cliente,
   );
   const total = Number(rows[0]?.total ?? 0);
   return {

@@ -2341,7 +2341,7 @@ paths:
   /api/ventas:
     get:
       operationId: listVentas
-      summary: Listar ventas
+      summary: Listar ventas (filtrables por comprobante y cliente)
       tags:
         - Ventas
       parameters:
@@ -2360,6 +2360,22 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: comprobante
+          in: query
+          required: false
+          description: Match parcial case-insensitive del número de comprobante. Se recortan espacios externos; combinable con los demás filtros.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 120
+        - name: cliente
+          in: query
+          required: false
+          description: Match parcial case-insensitive del nombre del cliente. Se recortan espacios externos; combinable con los demás filtros.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 120
         - name: pagina
           in: query
           required: false
@@ -3158,7 +3174,13 @@ paths:
         turnos, del más antiguo al más reciente; contexto, si se incluye, es el más reciente.
         El servidor no guarda contexto. Pedidos múltiples (ventas y ganancias de octubre,
         ventas de ayer y de hoy) devuelven entre 1 y 3 reportes, cada uno con su periodo.
-        Los campos superiores reflejan el primer reporte por retrocompatibilidad.
+        Para accion reporte (default si el modelo omite accion), los campos superiores
+        reflejan el primer reporte por retrocompatibilidad. Una venta puntual como
+        "la venta 84502147", "la venta del comprobante 123", "la venta de Rosa Quispe"
+        o "buscá la venta del cliente X" devuelve accion buscar_venta y criterio,
+        con comprobante y/o cliente (al menos uno), fecha o desde/hasta opcionales
+        solo si el pedido acota fechas. No busca en BD: el cliente consulta GET
+        /api/ventas con comprobante/cliente; ese endpoint no filtra fechas.
         El modelo se resuelve por petición: configuración BD > NAN_BUILDERS_MODEL >
         glm5.3-flash; puede cambiarse en caliente con PUT /api/reportes/modelo.
       security:
@@ -3216,46 +3238,91 @@ paths:
                 required: [data]
                 properties:
                   data:
-                    type: object
-                    required: [tipo, reportes]
-                    properties:
-                      reportes:
-                        type: array
-                        minItems: 1
-                        maxItems: 3
-                        items:
-                          type: object
-                          required: [tipo]
-                          description: Inventario requiere fechaCorte; los demás tipos requieren desde y hasta. Rango máximo de dos años calendario.
-                          properties:
-                            tipo:
-                              type: string
-                              enum: [ventas, ganancias, inventario, rotacion]
-                            desde:
-                              type: string
-                              format: date
-                            hasta:
-                              type: string
-                              format: date
-                            fechaCorte:
-                              type: string
-                              format: date
-                      tipo:
-                        type: string
-                        enum: [ventas, ganancias, inventario, rotacion]
-                      desde:
-                        type: string
-                        format: date
-                      hasta:
-                        type: string
-                        format: date
-                      fechaCorte:
-                        type: string
-                        format: date
-                      titulo:
-                        type: string
+                    discriminator:
+                      propertyName: accion
+                    oneOf:
+                      - type: object
+                        additionalProperties: false
+                        required: [accion, tipo, reportes]
+                        description: Inventario requiere fechaCorte; los demás tipos requieren desde y hasta. Se conservan los campos del primer reporte.
+                        properties:
+                          accion:
+                            type: string
+                            enum: [reporte]
+                            default: reporte
+                          reportes:
+                            type: array
+                            minItems: 1
+                            maxItems: 3
+                            items:
+                              type: object
+                              additionalProperties: false
+                              required: [tipo]
+                              description: Inventario requiere fechaCorte; los demás tipos requieren desde y hasta. Rango máximo de dos años calendario.
+                              properties:
+                                tipo:
+                                  type: string
+                                  enum: [ventas, ganancias, inventario, rotacion]
+                                desde:
+                                  type: string
+                                  format: date
+                                hasta:
+                                  type: string
+                                  format: date
+                                fechaCorte:
+                                  type: string
+                                  format: date
+                          tipo:
+                            type: string
+                            enum: [ventas, ganancias, inventario, rotacion]
+                          desde:
+                            type: string
+                            format: date
+                          hasta:
+                            type: string
+                            format: date
+                          fechaCorte:
+                            type: string
+                            format: date
+                          titulo:
+                            type: string
+                      - type: object
+                        additionalProperties: false
+                        required: [accion, criterio]
+                        properties:
+                          accion:
+                            type: string
+                            enum: [buscar_venta]
+                          criterio:
+                            type: object
+                            additionalProperties: false
+                            anyOf:
+                              - required: [comprobante]
+                              - required: [cliente]
+                            properties:
+                              comprobante:
+                                type: string
+                                minLength: 1
+                                maxLength: 120
+                              cliente:
+                                type: string
+                                minLength: 1
+                                maxLength: 120
+                              fecha:
+                                type: string
+                                format: date
+                                pattern: '^\d{4}-\d{2}-\d{2}$'
+                              desde:
+                                type: string
+                                format: date
+                                pattern: '^\d{4}-\d{2}-\d{2}$'
+                              hasta:
+                                type: string
+                                format: date
+                                pattern: '^\d{4}-\d{2}-\d{2}$'
               example:
                 data:
+                  accion: reporte
                   tipo: ventas
                   desde: "2026-11-01"
                   hasta: "2026-11-22"
@@ -3272,7 +3339,7 @@ paths:
         "502":
           description: AI_INVALID_RESPONSE (AI003), JSON o parámetros del LLM inválidos
         "503":
-          description: AI_NOT_CONFIGURED (AI001), sin API key; AI_UNAVAILABLE (AI002), fallo del proveedor o timeout de 15 segundos
+          description: AI_NOT_CONFIGURED (AI001), sin API key; AI_UNAVAILABLE (AI002), fallo del proveedor o timeout de 30 segundos
   /api/reportes/preguntar:
     post:
       operationId: preguntarSobreInforme

@@ -57,14 +57,36 @@ const reportVoiceItemDto = z.object({
   hasta: dateDto.optional(),
   fechaCorte: dateDto.optional(),
   titulo: z.string().trim().min(1).optional(),
-}).superRefine((value, ctx) => {
+}).strict().superRefine((value, ctx) => {
   const required = value.tipo === 'inventario' ? ['fechaCorte'] : ['desde', 'hasta'];
   for (const field of required) {
     if (!value[field]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: 'Fecha requerida' });
   }
 });
 
-// Normalize legacy objects before validating, without bypassing invalid arrays.
-export const reportVoiceResultDto = z.preprocess((value) => (
-  value && typeof value === 'object' && 'reportes' in value ? value : { reportes: [value] }
-), z.object({ reportes: z.array(reportVoiceItemDto).min(1).max(3) }));
+const saleSearchCriteriaDto = z.object({
+  comprobante: z.string().trim().min(1).max(120).optional(),
+  cliente: z.string().trim().min(1).max(120).optional(),
+  fecha: dateDto.optional(),
+  desde: dateDto.optional(),
+  hasta: dateDto.optional(),
+}).strict().refine((value) => value.comprobante !== undefined || value.cliente !== undefined, {
+  message: 'Comprobante o cliente requerido',
+});
+
+// Default the action and normalize legacy single reports, without bypassing invalid arrays.
+export const reportVoiceResultDto = z.preprocess((value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  const { accion = 'reporte', ...fields } = value;
+  if (accion !== 'reporte' || 'reportes' in fields) return { accion, ...fields };
+  return { accion, reportes: [fields] };
+}, z.discriminatedUnion('accion', [
+  z.object({
+    accion: z.literal('reporte'),
+    reportes: z.array(reportVoiceItemDto).min(1).max(3),
+  }).strict(),
+  z.object({
+    accion: z.literal('buscar_venta'),
+    criterio: saleSearchCriteriaDto,
+  }).strict(),
+]));

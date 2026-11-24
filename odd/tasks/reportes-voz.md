@@ -82,7 +82,23 @@ rechazan con 400 antes de llamar al modelo; errores AI_* igual que interpretar.
 Frontend: input "Preguntar sobre este informe" + micrófono reutilizando el hook,
 respuesta visible y leída en voz alta, historial de preguntas del informe.
 
+T12 [S13] búsqueda de ventas puntuales por voz (fuera del informe):
+- GET /api/ventas acepta dos filtros nuevos: `comprobante` (texto, match
+  parcial case-insensitive) y `cliente` (texto, match parcial por nombre);
+  combinables con estado/idCliente/paginación existentes y sin romperlos.
+- El intérprete pasa a responder un discriminated union por `accion`:
+  `reporte` (default, shape actual intacto) o `buscar_venta` con
+  `criterio: {comprobante?, cliente?, fecha?}` (ISO). Si el modelo omite
+  `accion` se asume `reporte`. Con `buscar_venta` se admite también un
+  periodo opcional desde/hasta para acotar.
+- Frontend: al dictar una búsqueda, llama a /api/ventas con los criterios y
+  muestra los resultados (fecha, cliente, estado, total, comprobante) con link
+  a la página Ventas; cero resultados -> aviso hablado.
+
 ## Log
+
+L6 (2026-11-24): decisión del usuario tras la fase 2: "Sí, búsqueda de ventas
+por voz" — incluye ventas que NO están en el informe actual.
 
 L5 (2026-11-24, pedido del usuario): "Si le pregunto sobre una venta específica
 debería de responderme?" → decisión del usuario: "sería adecuado poder tener,

@@ -6,7 +6,17 @@ export const OPERACION_ENTREGA = 'VENTA_ENTREGA';
 const MOTIVO_CONFIRMAR = 'VENTA_CONFIRMAR';
 const MOTIVO_ANULAR = 'VENTA_ANULAR';
 
-export const listSales = async (estado, idCliente, limite, desplazamiento) => {
+export const listSales = async (estado, idCliente, limite, desplazamiento, comprobante, cliente) => {
+  const params = [estado ?? null, idCliente ?? null, limite, desplazamiento];
+  let searchFilters = '';
+  if (comprobante !== undefined) {
+    params.push(comprobante);
+    searchFilters += `\n      AND EXISTS (SELECT 1 FROM electronica_az.comprobante cp WHERE cp.id_venta = v.id_venta AND cp.numero ILIKE '%' || $${params.length} || '%')`;
+  }
+  if (cliente !== undefined) {
+    params.push(cliente);
+    searchFilters += `\n      AND c.nombre ILIKE '%' || $${params.length} || '%'`;
+  }
   const result = await query(`
     SELECT v.id_venta, v.fecha_hora, v.estado, v.id_cliente, v.id_usuario,
       c.nombre AS cliente_nombre,
@@ -36,10 +46,10 @@ export const listSales = async (estado, idCliente, limite, desplazamiento) => {
     FROM electronica_az.venta v
     JOIN electronica_az.cliente c ON c.id_cliente = v.id_cliente
     WHERE ($1::text IS NULL OR v.estado = $1)
-      AND ($2::uuid IS NULL OR v.id_cliente = $2)
+      AND ($2::uuid IS NULL OR v.id_cliente = $2)${searchFilters}
     ORDER BY v.fecha_hora DESC, v.id_venta DESC
     LIMIT $3 OFFSET $4
-  `, [estado ?? null, idCliente ?? null, limite, desplazamiento]);
+  `, params);
   return result.rows;
 };
 

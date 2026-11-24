@@ -36,6 +36,8 @@ export const comprobanteQueryDto = z.object({
 export const listSalesQueryDto = z.object({
   estado: z.enum(['BORRADOR', 'CONFIRMADA', 'ANULADA']).optional(),
   idCliente: uuidDto.optional(),
+  comprobante: z.string().trim().min(1).max(120).optional(),
+  cliente: z.string().trim().min(1).max(120).optional(),
   pagina: z.coerce.number().int().positive().default(1),
   limite: z.coerce.number().int().positive().max(100).default(20),
 });

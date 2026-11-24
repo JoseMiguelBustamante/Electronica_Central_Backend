@@ -39,6 +39,15 @@ const post = (texto, token = 'admin-session') => request(app)
   .post('/api/reportes/interpretar').set('Authorization', `Bearer ${token}`).send({ texto });
 
 describe('report voice HTTP flow (session service isolated)', () => {
+  test('S13 200 sale-number dictation returns buscar_venta criteria through HTTP', async () => {
+    const intent = { accion: 'buscar_venta', criterio: { comprobante: '84502147' } };
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(intent) } }] }) });
+    const response = await post('la venta 84502147');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ data: intent });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(guardarValor).not.toHaveBeenCalled();
+  });
   test('200 multi-report phrase with oldest-first historial and current contexto', async () => {
     const reportes = [{ tipo: 'ventas', desde: '2026-10-01', hasta: '2026-10-31' }, { tipo: 'ganancias', desde: '2026-10-01', hasta: '2026-10-31' }];
     const historial = Array(5).fill(result);
@@ -46,7 +55,7 @@ describe('report voice HTTP flow (session service isolated)', () => {
     const response = await request(app).post('/api/reportes/interpretar').set('Authorization', 'Bearer admin-session')
       .send({ texto: 'ventas y ganancias de octubre', historial, contexto: result });
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ data: { ...reportes[0], reportes } });
+    expect(response.body).toEqual({ data: { accion: 'reporte', ...reportes[0], reportes } });
     const { messages } = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(JSON.stringify(messages)).toContain('Turno 5:');
     expect(messages.at(-2).content).toContain(JSON.stringify(result));
@@ -90,7 +99,7 @@ describe('report voice HTTP flow (session service isolated)', () => {
     expect(current.body).toEqual(saved.body);
     const interpreted = await post('ventas hoy');
     expect(interpreted.status).toBe(200);
-    expect(interpreted.body).toEqual({ data: { ...result, reportes: [result] } });
+    expect(interpreted.body).toEqual({ data: { accion: 'reporte', ...result, reportes: [result] } });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).model).toBe('deepseek-v4-flash');
   });
@@ -141,7 +150,7 @@ describe('report voice HTTP flow (session service isolated)', () => {
   test('200 parsed LLM object through HTTP boundary', async () => {
     const response = await post('ventas este mes');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ data: { ...result, reportes: [result] } });
+    expect(response.body).toEqual({ data: { accion: 'reporte', ...result, reportes: [result] } });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
   test('200 contextual follow-up forwards context and returns the changed report type', async () => {
@@ -151,7 +160,7 @@ describe('report voice HTTP flow (session service isolated)', () => {
     const response = await request(app).post('/api/reportes/interpretar')
       .set('Authorization', 'Bearer admin-session').send({ texto: 'y ganancias de ese mes?', contexto });
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ data: { ...followUp, reportes: [followUp] } });
+    expect(response.body).toEqual({ data: { accion: 'reporte', ...followUp, reportes: [followUp] } });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).messages).toContainEqual(expect.objectContaining({
       role: 'user', content: expect.stringContaining(JSON.stringify(contexto)),
