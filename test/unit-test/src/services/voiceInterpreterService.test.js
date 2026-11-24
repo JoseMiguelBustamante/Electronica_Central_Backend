@@ -2,11 +2,18 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { interpretarInstruccionReporte } from '../../../../src/services/voiceInterpreterService.js';
 import { errorCodes } from '../../../../src/config/errorCodes.js';
 
+vi.mock('../../../../src/repositories/configuracionRepository.js', () => ({ obtenerValor: vi.fn() }));
+vi.mock('../../../../src/lib/logger.js', () => ({ logger: { warn: vi.fn() } }));
+import { obtenerValor } from '../../../../src/repositories/configuracionRepository.js';
+import { logger } from '../../../../src/lib/logger.js';
+
 const period = { tipo: 'ventas', desde: '2026-11-01', hasta: '2026-11-22' };
 const reply = (content) => ({ ok: true, json: async () => ({ choices: [{ message: { content } }] }) });
 let fetchMock;
 
 beforeEach(() => {
+  vi.clearAllMocks();
+  obtenerValor.mockResolvedValue({ rows: [] });
   vi.stubEnv('NAN_BUILDERS_API_KEY', 'test-key');
   vi.stubEnv('NAN_BUILDERS_BASE_URL', 'https://example.test/v1/');
   vi.stubEnv('NAN_BUILDERS_MODEL', 'test-model');
@@ -16,6 +23,28 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe('interpretarInstruccionReporte', () => {
+  test('database model overrides env and is resolved again on every request', async () => {
+    obtenerValor.mockResolvedValueOnce({ rows: [{ valor: 'deepseek-v4-flash' }] })
+      .mockResolvedValueOnce({ rows: [{ valor: 'another-model' }] });
+    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual(period);
+    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual(period);
+    expect(obtenerValor).toHaveBeenNthCalledWith(1, 'modelo_ia');
+    expect(obtenerValor).toHaveBeenNthCalledWith(2, 'modelo_ia');
+    expect(fetchMock.mock.calls.map(([, options]) => JSON.parse(options.body).model))
+      .toEqual(['deepseek-v4-flash', 'another-model']);
+  });
+  test('missing database row uses env model', async () => {
+    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual(period);
+    expect(obtenerValor).toHaveBeenCalledWith('modelo_ia');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).model).toBe('test-model');
+  });
+  test('database read failure logs warning and still fetches using env model', async () => {
+    obtenerValor.mockRejectedValue(new Error('configuration table missing'));
+    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual(period);
+    expect(logger.warn).toHaveBeenCalledWith('voice_model_config_unavailable', { message: 'configuration table missing' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).model).toBe('test-model');
+  });
   test('builds a valid object, authorization, model and call-time La Paz date', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-11-23T02:00:00Z'));

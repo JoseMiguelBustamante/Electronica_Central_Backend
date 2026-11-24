@@ -8,6 +8,25 @@ import {
 } from '../services/reportService.js';
 import { buildReportPdfBuffer } from '../services/pdfService.js';
 import { sendError } from '../utils/sendError.js';
+import { obtenerModeloReporte } from '../services/voiceInterpreterService.js';
+import { guardarValor } from '../repositories/configuracionRepository.js';
+
+export const obtenerModeloController = async (_req, res) => {
+  try {
+    return res.status(200).json({ data: await obtenerModeloReporte() });
+  } catch (error) {
+    return sendError(res, error);
+  }
+};
+
+export const guardarModeloController = async (req, res) => {
+  try {
+    const { rows } = await guardarValor('modelo_ia', req.validated.body.modelo);
+    return res.status(200).json({ data: { modelo: rows[0].valor, origen: 'bd' } });
+  } catch (error) {
+    return sendError(res, error);
+  }
+};
 
 const sendReport = async (res, formato, filename, data, excelSpec, pdfTitle) => {
   if (formato === 'xlsx') {

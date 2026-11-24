@@ -13,6 +13,10 @@ export const reportVoiceContextDto = z.object({
   fechaCorte: dateDto.optional(),
 });
 
+export const guardarModeloBodyDto = z.object({
+  modelo: z.string().trim().min(1).max(80),
+});
+
 export const reportVoiceBodyDto = z.object({
   texto: z.string().trim().min(3).max(500),
   contexto: reportVoiceContextDto.optional(),

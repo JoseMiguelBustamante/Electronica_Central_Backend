@@ -53,7 +53,15 @@ interpretación; el LLM resuelve referencias relativas (el mes anterior, esa
 misma semana) contra ese contexto — commit
 T7 [S8] voz natural: selección de la mejor voz es disponible (Google español /
 Natural > es-*), cadencia con puntuación, montos en palabras + "bolivianos";
-el frontend pasa contexto — commit
+el frontend pasa contexto — commit [DONE: ver repo frontend 1d059b6, smoke
+productivo del follow-up contextual OK]
+T8 [S9] switch de modelo IA en caliente: migración 018 tabla configuracion
+(clave/valor, idempotente); configuracionRepository; voiceInterpreterService
+resuelve modelo efectivo por request (override BD > NAN_BUILDERS_MODEL env >
+glm5.3-flash); GET /api/reportes/modelo y PUT {modelo} (≤80 chars, no vacío)
+con auth + REPORTES_CONSULTAR; openapi; tests: override gana sobre env,
+PUT válido cambia, inválido 400 sin fetch, 401/403, modelo usado en el body
+del LLM configurable vía stub — commit
 
 ## Log
 

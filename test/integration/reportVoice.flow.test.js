@@ -12,6 +12,8 @@ vi.mock('../../src/services/authService.js', async (importOriginal) => ({
     },
   })),
 }));
+vi.mock('../../src/repositories/configuracionRepository.js', () => ({ obtenerValor: vi.fn(), guardarValor: vi.fn() }));
+import { obtenerValor, guardarValor } from '../../src/repositories/configuracionRepository.js';
 import { createApp } from '../../src/app.js';
 import { errorCodes } from '../../src/config/errorCodes.js';
 
@@ -19,6 +21,14 @@ const app = createApp();
 let fetchMock;
 const result = { tipo: 'ventas', desde: '2026-11-01', hasta: '2026-11-22' };
 beforeEach(() => {
+  vi.clearAllMocks();
+  let stored;
+  obtenerValor.mockImplementation(async () => ({ rows: stored === undefined ? [] : [{ valor: stored }] }));
+  guardarValor.mockImplementation(async (_clave, valor) => {
+    stored = valor;
+    return { rows: [{ valor }] };
+  });
+  vi.stubEnv('NAN_BUILDERS_MODEL', 'env-model');
   vi.stubEnv('NAN_BUILDERS_API_KEY', 'test-key');
   fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(result) } }] }) });
   vi.stubGlobal('fetch', fetchMock);
@@ -29,6 +39,56 @@ const post = (texto, token = 'admin-session') => request(app)
   .post('/api/reportes/interpretar').set('Authorization', `Bearer ${token}`).send({ texto });
 
 describe('report voice HTTP flow (session service isolated)', () => {
+  test.each(['get', 'put'])('modelo %s returns 401 without token and 403 without permission', async (method) => {
+    for (const [token, status, code] of [[undefined, 401, errorCodes.MISSING_TOKEN], ['vendor-session', 403, errorCodes.ACCESS_DENIED]]) {
+      const call = request(app)[method]('/api/reportes/modelo');
+      if (token) call.set('Authorization', `Bearer ${token}`);
+      const response = await call.send({ modelo: 'deepseek-v4-flash' });
+      expect(response.status).toBe(status);
+      expect(response.body.error.code).toBe(code);
+    }
+    expect(obtenerValor).not.toHaveBeenCalled();
+    expect(guardarValor).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  test('GET modelo reports env fallback without a database row', async () => {
+    const response = await request(app).get('/api/reportes/modelo').set('Authorization', 'Bearer admin-session');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ data: { modelo: 'env-model', origen: 'env' } });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  test('PUT persists trimmed model, subsequent GET and interpretation use it immediately', async () => {
+    const saved = await request(app).put('/api/reportes/modelo').set('Authorization', 'Bearer admin-session')
+      .send({ modelo: ' deepseek-v4-flash ' });
+    expect(saved.status).toBe(200);
+    expect(saved.body).toEqual({ data: { modelo: 'deepseek-v4-flash', origen: 'bd' } });
+    expect(guardarValor).toHaveBeenCalledExactlyOnceWith('modelo_ia', 'deepseek-v4-flash');
+    const current = await request(app).get('/api/reportes/modelo').set('Authorization', 'Bearer admin-session');
+    expect(current.status).toBe(200);
+    expect(current.body).toEqual(saved.body);
+    const interpreted = await post('ventas hoy');
+    expect(interpreted.status).toBe(200);
+    expect(interpreted.body).toEqual({ data: result });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).model).toBe('deepseek-v4-flash');
+  });
+  test.each(['', '   ', 'a'.repeat(81), null, 123])('PUT rejects invalid modelo %j without saving or LLM fetch', async (modelo) => {
+    const response = await request(app).put('/api/reportes/modelo').set('Authorization', 'Bearer admin-session').send({ modelo });
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe(errorCodes.VALIDATION_ERROR);
+    expect(guardarValor).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+    const current = await request(app).get('/api/reportes/modelo').set('Authorization', 'Bearer admin-session');
+    expect(current.status).toBe(200);
+    expect(current.body).toEqual({ data: { modelo: 'env-model', origen: 'env' } });
+  });
+  test.each(['x', 'a'.repeat(80)])('PUT accepts model length boundary %s', async (modelo) => {
+    const response = await request(app).put('/api/reportes/modelo').set('Authorization', 'Bearer admin-session').send({ modelo });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ data: { modelo, origen: 'bd' } });
+    expect(guardarValor).toHaveBeenCalledExactlyOnceWith('modelo_ia', modelo);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
   test('401 without token', async () => {
     const response = await request(app).post('/api/reportes/interpretar').send({ texto: 'ventas hoy' });
     expect(response.status).toBe(401);
