@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  preguntarSobreInformeController,
   obtenerModeloController,
   guardarModeloController,
   reportGananciasController,
@@ -15,12 +16,14 @@ import {
 import { authenticate } from '../middlewares/authMiddleware.js';
 import { requirePermissions } from '../middlewares/authorizationMiddleware.js';
 import { validateBody, validateQuery } from '../middlewares/validateDto.js';
-import { guardarModeloBodyDto, reportVoiceBodyDto } from '../dto/reportVoice.dto.js';
+import { guardarModeloBodyDto, reportQaBodyDto, reportVoiceBodyDto } from '../dto/reportVoice.dto.js';
 import { interpretarInstruccionReporte } from '../services/voiceInterpreterService.js';
 import { sendError } from '../utils/sendError.js';
 
 const reportRouter = Router();
 const consultReports = [authenticate, requirePermissions('REPORTES_CONSULTAR')];
+
+reportRouter.post('/preguntar', ...consultReports, validateBody(reportQaBodyDto), preguntarSobreInformeController);
 
 reportRouter.get('/modelo', ...consultReports, obtenerModeloController);
 reportRouter.put('/modelo', ...consultReports, validateBody(guardarModeloBodyDto), guardarModeloController);

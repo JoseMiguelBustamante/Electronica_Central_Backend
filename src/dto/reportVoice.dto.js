@@ -15,6 +15,32 @@ export const reportVoiceContextDto = z.object({
 
 export const reportVoiceHistoryDto = z.array(reportVoiceContextDto).max(5);
 
+const reportQaValueDto = z.union([z.string(), z.number(), z.boolean()]);
+
+export const reportQaBodyDto = z.object({
+  pregunta: z.string().trim().min(3).max(500),
+  informe: z.object({
+    tipo: z.enum(['ventas', 'ganancias', 'inventario', 'rotacion']),
+    periodo: z.object({
+      desde: z.string(),
+      hasta: z.string(),
+      zona: z.string().optional(),
+    }).strict().nullable().optional(),
+    fechaCorte: z.string().nullable().optional(),
+    resumen: z.record(reportQaValueDto).optional(),
+    items: z.array(z.record(reportQaValueDto.nullable())).max(60).optional(),
+  }).strict(),
+  historial: z.array(z.object({
+    pregunta: z.string().trim().min(3).max(500),
+    respuesta: z.string().trim().min(1).max(1000),
+  }).strict()).max(5).optional(),
+}).strict();
+
+export const reportQaResultDto = z.object({
+  respuesta: z.string().trim().min(1),
+  destacados: z.array(z.string()).max(5).default([]),
+});
+
 export const guardarModeloBodyDto = z.object({
   modelo: z.string().trim().min(1).max(80),
 });

@@ -71,7 +71,24 @@ fechaCorte?}]` (1..3 elementos) además de tipo/desde/hasta (primero) por
 retrocompatibilidad; el prompt pide separar pedidos múltiples ("ventas y
 ganancias de octubre", "ventas de ayer y de hoy") hasta 3; tests — commit
 
+T11 [S12] preguntas sobre el informe generado (fase 2 de la conversación):
+POST /api/reportes/preguntar recibe {pregunta, informe: {tipo, periodo?,
+resumen?, items?: [record] (máx 60)}, historial?: [preguntaPrevia]} y devuelve
+{respuesta: string (lenguaje natural, 1-3 frases, en español, solo con datos
+del informe), destacados?: string[] (ids de items mencionados)}. Guards
+REPORTES_CONSULTAR. El LLM SOLO razona sobre el informe enviado (no consulta la
+BD ni inventa cifras fuera de él); pregunta vacía/larga o informe >60 items se
+rechazan con 400 antes de llamar al modelo; errores AI_* igual que interpretar.
+Frontend: input "Preguntar sobre este informe" + micrófono reutilizando el hook,
+respuesta visible y leída en voz alta, historial de preguntas del informe.
+
 ## Log
+
+L5 (2026-11-24, pedido del usuario): "Si le pregunto sobre una venta específica
+debería de responderme?" → decisión del usuario: "sería adecuado poder tener,
+en 2 fases primero que se genere el reporte y después si pregunta que sea sobre
+el informe generado". Alcance T11: preguntas conversacionales ancladas al informe
+ya generado (no búsqueda libre de ventas en toda la BD).
 
 L4 (2026-11-24, pedido del usuario): "Que sea más interactivo lo de la voz con
 los reportes nivel 2 como dijiste". Alcance nivel 2:

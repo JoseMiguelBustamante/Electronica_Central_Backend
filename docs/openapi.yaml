@@ -3273,6 +3273,129 @@ paths:
           description: AI_INVALID_RESPONSE (AI003), JSON o parámetros del LLM inválidos
         "503":
           description: AI_NOT_CONFIGURED (AI001), sin API key; AI_UNAVAILABLE (AI002), fallo del proveedor o timeout de 15 segundos
+  /api/reportes/preguntar:
+    post:
+      operationId: preguntarSobreInforme
+      summary: Preguntar sobre un informe ya generado
+      tags: [Reportes]
+      description: |
+        Fase 2 de la conversación. Requiere REPORTES_CONSULTAR. Solo razona sobre
+        el informe enviado, sin buscar ventas ni consultar datos de reportes en BD.
+        No almacena historial. El modelo se resuelve por petición igual que interpretar
+        (configuración BD > entorno). Responde en español, en 1-3 frases cortas,
+        con formato monetario boliviano. Si faltan datos responde exactamente
+        "No se puede responder con los datos del informe." con destacados vacío.
+        Se rechazan propiedades desconocidas en body, informe, periodo y turnos.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [pregunta, informe]
+              properties:
+                pregunta:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+                  description: Longitud después de trim.
+                informe:
+                  type: object
+                  additionalProperties: false
+                  required: [tipo]
+                  properties:
+                    tipo:
+                      type: string
+                      enum: [ventas, ganancias, inventario, rotacion]
+                    periodo:
+                      type: object
+                      nullable: true
+                      additionalProperties: false
+                      required: [desde, hasta]
+                      properties:
+                        desde:
+                          type: string
+                        hasta:
+                          type: string
+                        zona:
+                          type: string
+                    fechaCorte:
+                      type: string
+                      nullable: true
+                    resumen:
+                      type: object
+                      additionalProperties:
+                        oneOf:
+                          - type: number
+                          - type: string
+                          - type: boolean
+                    items:
+                      type: array
+                      maxItems: 60
+                      items:
+                        type: object
+                        additionalProperties:
+                          anyOf:
+                            - type: string
+                              nullable: true
+                            - type: number
+                            - type: boolean
+                historial:
+                  type: array
+                  maxItems: 5
+                  description: Preguntas y respuestas previas, del más antiguo al más reciente.
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required: [pregunta, respuesta]
+                    properties:
+                      pregunta:
+                        type: string
+                        minLength: 3
+                        maxLength: 500
+                      respuesta:
+                        type: string
+                        minLength: 1
+                        maxLength: 1000
+      responses:
+        "200":
+          description: Respuesta basada únicamente en el informe suministrado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [respuesta, destacados]
+                    properties:
+                      respuesta:
+                        type: string
+                        minLength: 1
+                      destacados:
+                        type: array
+                        maxItems: 5
+                        description: Identificadores de items relevantes del informe; vacío si no aplica.
+                        items:
+                          type: string
+              example:
+                data:
+                  respuesta: La venta más cara fue v2, por Bs 1.000,00.
+                  destacados: [v2]
+        "400":
+          description: VALIDATION_ERROR (BR001), pregunta o informe inválido, más de 60 items o historial inválido (máximo 5 turnos)
+        "401":
+          description: Autenticación requerida (AU003) o sesión inválida/expirada (AU001/AU002)
+        "403":
+          description: Acceso denegado (FB001), falta REPORTES_CONSULTAR
+        "502":
+          description: AI_INVALID_RESPONSE (AI003), JSON o respuesta del LLM inválidos
+        "503":
+          description: AI_NOT_CONFIGURED (AI001), sin API key; AI_UNAVAILABLE (AI002), fallo del proveedor o timeout de 30 segundos
   /api/reportes/ventas:
     get:
       operationId: reportVentas

@@ -10,6 +10,15 @@ import { buildReportPdfBuffer } from '../services/pdfService.js';
 import { sendError } from '../utils/sendError.js';
 import { obtenerModeloReporte } from '../services/voiceInterpreterService.js';
 import { guardarValor } from '../repositories/configuracionRepository.js';
+import { preguntarSobreInforme } from '../services/reportQaService.js';
+
+export const preguntarSobreInformeController = async (req, res) => {
+  try {
+    return res.status(200).json({ data: await preguntarSobreInforme(req.validated.body) });
+  } catch (error) {
+    return sendError(res, error);
+  }
+};
 
 export const obtenerModeloController = async (_req, res) => {
   try {
