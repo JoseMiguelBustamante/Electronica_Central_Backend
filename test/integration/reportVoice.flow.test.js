@@ -39,6 +39,28 @@ const post = (texto, token = 'admin-session') => request(app)
   .post('/api/reportes/interpretar').set('Authorization', `Bearer ${token}`).send({ texto });
 
 describe('report voice HTTP flow (session service isolated)', () => {
+  test('200 multi-report phrase with oldest-first historial and current contexto', async () => {
+    const reportes = [{ tipo: 'ventas', desde: '2026-10-01', hasta: '2026-10-31' }, { tipo: 'ganancias', desde: '2026-10-01', hasta: '2026-10-31' }];
+    const historial = Array(5).fill(result);
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ reportes }) } }] }) });
+    const response = await request(app).post('/api/reportes/interpretar').set('Authorization', 'Bearer admin-session')
+      .send({ texto: 'ventas y ganancias de octubre', historial, contexto: result });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ data: { ...reportes[0], reportes } });
+    const { messages } = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(JSON.stringify(messages)).toContain('Turno 5:');
+    expect(messages.at(-2).content).toContain(JSON.stringify(result));
+    expect(guardarValor).not.toHaveBeenCalled();
+  });
+  test.each([Array(6).fill(result), [{ ...result, tipo: 'compras' }], [{ ...result, desde: '2026-02-30' }]])('400 invalid historial is rejected by DTO before fetch: %j', async (historial) => {
+    const response = await request(app).post('/api/reportes/interpretar').set('Authorization', 'Bearer admin-session')
+      .send({ texto: 'el mismo que hace dos', historial });
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe(errorCodes.VALIDATION_ERROR);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(obtenerValor).not.toHaveBeenCalled();
+    expect(guardarValor).not.toHaveBeenCalled();
+  });
   test.each(['get', 'put'])('modelo %s returns 401 without token and 403 without permission', async (method) => {
     for (const [token, status, code] of [[undefined, 401, errorCodes.MISSING_TOKEN], ['vendor-session', 403, errorCodes.ACCESS_DENIED]]) {
       const call = request(app)[method]('/api/reportes/modelo');
@@ -68,7 +90,7 @@ describe('report voice HTTP flow (session service isolated)', () => {
     expect(current.body).toEqual(saved.body);
     const interpreted = await post('ventas hoy');
     expect(interpreted.status).toBe(200);
-    expect(interpreted.body).toEqual({ data: result });
+    expect(interpreted.body).toEqual({ data: { ...result, reportes: [result] } });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).model).toBe('deepseek-v4-flash');
   });
@@ -119,7 +141,7 @@ describe('report voice HTTP flow (session service isolated)', () => {
   test('200 parsed LLM object through HTTP boundary', async () => {
     const response = await post('ventas este mes');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ data: result });
+    expect(response.body).toEqual({ data: { ...result, reportes: [result] } });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
   test('200 contextual follow-up forwards context and returns the changed report type', async () => {
@@ -129,7 +151,7 @@ describe('report voice HTTP flow (session service isolated)', () => {
     const response = await request(app).post('/api/reportes/interpretar')
       .set('Authorization', 'Bearer admin-session').send({ texto: 'y ganancias de ese mes?', contexto });
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ data: followUp });
+    expect(response.body).toEqual({ data: { ...followUp, reportes: [followUp] } });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).messages).toContainEqual(expect.objectContaining({
       role: 'user', content: expect.stringContaining(JSON.stringify(contexto)),

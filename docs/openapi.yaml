@@ -3154,7 +3154,11 @@ paths:
         últimos 30 días y fechas explícitas. El título es opcional.
         El cliente puede reenviar contexto del último reporte para resolver periodos
         relativos (el mes anterior, esa misma semana, ese trimestre, el año pasado)
-        y cambiar el tipo conservando el periodo. El servidor no guarda contexto.
+        y cambiar el tipo conservando el periodo. También acepta historial de hasta 5
+        turnos, del más antiguo al más reciente; contexto, si se incluye, es el más reciente.
+        El servidor no guarda contexto. Pedidos múltiples (ventas y ganancias de octubre,
+        ventas de ayer y de hoy) devuelven entre 1 y 3 reportes, cada uno con su periodo.
+        Los campos superiores reflejan el primer reporte por retrocompatibilidad.
         El modelo se resuelve por petición: configuración BD > NAN_BUILDERS_MODEL >
         glm5.3-flash; puede cambiarse en caliente con PUT /api/reportes/modelo.
       security:
@@ -3172,6 +3176,12 @@ paths:
                   minLength: 3
                   maxLength: 500
                   example: ventas este mes
+                historial:
+                  type: array
+                  maxItems: 5
+                  description: Turnos previos del más antiguo al más reciente, con la misma forma que contexto.
+                  items:
+                    $ref: '#/paths/~1api~1reportes~1interpretar/post/requestBody/content/application~1json/schema/properties/contexto'
                 contexto:
                   type: object
                   description: Último reporte pedido, reenviado por el cliente de forma opcional.
@@ -3207,8 +3217,29 @@ paths:
                 properties:
                   data:
                     type: object
-                    required: [tipo]
+                    required: [tipo, reportes]
                     properties:
+                      reportes:
+                        type: array
+                        minItems: 1
+                        maxItems: 3
+                        items:
+                          type: object
+                          required: [tipo]
+                          description: Inventario requiere fechaCorte; los demás tipos requieren desde y hasta. Rango máximo de dos años calendario.
+                          properties:
+                            tipo:
+                              type: string
+                              enum: [ventas, ganancias, inventario, rotacion]
+                            desde:
+                              type: string
+                              format: date
+                            hasta:
+                              type: string
+                              format: date
+                            fechaCorte:
+                              type: string
+                              format: date
                       tipo:
                         type: string
                         enum: [ventas, ganancias, inventario, rotacion]
@@ -3228,8 +3259,12 @@ paths:
                   tipo: ventas
                   desde: "2026-11-01"
                   hasta: "2026-11-22"
+                  reportes:
+                    - tipo: ventas
+                      desde: "2026-11-01"
+                      hasta: "2026-11-22"
         "400":
-          description: VALIDATION_ERROR (BR001), texto o contexto inválido o desde posterior a hasta
+          description: VALIDATION_ERROR (BR001), texto, contexto o historial inválido o desde posterior a hasta
         "401":
           description: Autenticación requerida (AU003) o sesión inválida/expirada (AU001/AU002)
         "403":

@@ -62,8 +62,30 @@ glm5.3-flash); GET /api/reportes/modelo y PUT {modelo} (≤80 chars, no vacío)
 con auth + REPORTES_CONSULTAR; openapi; tests: override gana sobre env,
 PUT válido cambia, inválido 400 sin fetch, 401/403, modelo usado en el body
 del LLM configurable vía stub — commit
+T9 [S10] historial multi-turno: DTO acepta `historial?: ContextoReporte[]`
+(max 5, validado con Zod, cada item igual que `contexto`); el service incluye
+el historial en los mensajes para referencias a turnos previos; se mantiene
+`contexto` (retrocompatible) — commit
+T10 [S11] multi-reporte: la respuesta incluye `reportes: [{tipo,desde,hasta,
+fechaCorte?}]` (1..3 elementos) además de tipo/desde/hasta (primero) por
+retrocompatibilidad; el prompt pide separar pedidos múltiples ("ventas y
+ganancias de octubre", "ventas de ayer y de hoy") hasta 3; tests — commit
 
 ## Log
+
+L4 (2026-11-24, pedido del usuario): "Que sea más interactivo lo de la voz con
+los reportes nivel 2 como dijiste". Alcance nivel 2:
+- T9 [S10] historial multi-turno: el cliente envía `historial` (hasta 5
+  interpretaciones previas) además del `contexto` actual; el LLM resuelve
+  referencias a turnos anteriores ("volvé al de la semana pasada", "el mismo
+  que hace dos").
+- T10 [S11] multi-reporte en una frase: la respuesta pasa a incluir
+  `reportes: [{tipo,desde,hasta,fechaCorte?}]` (1..3); se mantienen
+  tipo/desde/hasta del primero por retrocompatibilidad. El front genera los
+  pedidos en secuencia, muestra el último y lo dice por voz.
+Bug bloqueante detectado en la misma corrida (fix incluido): CORS
+ALLOWED_METHODS no incluía PUT, así que el selector de modelo fallaba en el
+navegador con "Network Error" aunque el endpoint funcionara por curl.
 
 L3 (2026-11-23, pedido del usuario): "Si quiero que sea interactivo como
 tendría que ser? Y también cambiar el tipo de voz que sea más natural".

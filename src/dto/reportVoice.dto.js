@@ -13,6 +13,8 @@ export const reportVoiceContextDto = z.object({
   fechaCorte: dateDto.optional(),
 });
 
+export const reportVoiceHistoryDto = z.array(reportVoiceContextDto).max(5);
+
 export const guardarModeloBodyDto = z.object({
   modelo: z.string().trim().min(1).max(80),
 });
@@ -20,9 +22,10 @@ export const guardarModeloBodyDto = z.object({
 export const reportVoiceBodyDto = z.object({
   texto: z.string().trim().min(3).max(500),
   contexto: reportVoiceContextDto.optional(),
+  historial: reportVoiceHistoryDto.optional(),
 });
 
-export const reportVoiceResultDto = z.object({
+const reportVoiceItemDto = z.object({
   tipo: z.enum(['ventas', 'ganancias', 'inventario', 'rotacion']),
   desde: dateDto.optional(),
   hasta: dateDto.optional(),
@@ -34,3 +37,8 @@ export const reportVoiceResultDto = z.object({
     if (!value[field]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: 'Fecha requerida' });
   }
 });
+
+// Normalize legacy objects before validating, without bypassing invalid arrays.
+export const reportVoiceResultDto = z.preprocess((value) => (
+  value && typeof value === 'object' && 'reportes' in value ? value : { reportes: [value] }
+), z.object({ reportes: z.array(reportVoiceItemDto).min(1).max(3) }));

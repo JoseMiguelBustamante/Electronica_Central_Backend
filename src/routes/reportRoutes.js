@@ -27,7 +27,7 @@ reportRouter.put('/modelo', ...consultReports, validateBody(guardarModeloBodyDto
 
 reportRouter.post('/interpretar', ...consultReports, validateBody(reportVoiceBodyDto), async (req, res) => {
   try {
-    return res.status(200).json({ data: await interpretarInstruccionReporte(req.validated.body.texto, req.validated.body.contexto) });
+    return res.status(200).json({ data: await interpretarInstruccionReporte(req.validated.body.texto, req.validated.body.contexto, req.validated.body.historial) });
   } catch (error) {
     return sendError(res, error);
   }

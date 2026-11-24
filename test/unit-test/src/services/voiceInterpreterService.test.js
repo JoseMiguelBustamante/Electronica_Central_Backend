@@ -23,24 +23,58 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe('interpretarInstruccionReporte', () => {
+  test('includes oldest-first historial turns before the most recent contexto', async () => {
+    const historial = [period, { ...period, tipo: 'ganancias' }];
+    await interpretarInstruccionReporte('el mismo que hace dos', period, historial);
+    const { messages } = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const history = messages.find(({ content }) => content.includes('Turno 1:'));
+    expect(history.content).toContain(`Turno 1: ${JSON.stringify(historial[0])}\nTurno 2: ${JSON.stringify(historial[1])}`);
+    expect(messages.indexOf(history)).toBeLessThan(messages.findIndex(({ content }) => content.includes('Contexto del último reporte pedido:')));
+    await interpretarInstruccionReporte('ventas hoy');
+    expect(JSON.stringify(JSON.parse(fetchMock.mock.calls[1][1].body).messages)).not.toContain('Turno 1:');
+  });
+  test('normalizes two reports and mirrors the first report at top level', async () => {
+    const reportes = [{ tipo: 'ventas', desde: '2026-10-01', hasta: '2026-10-31' }, { tipo: 'ganancias', desde: '2026-10-01', hasta: '2026-10-31' }];
+    fetchMock.mockResolvedValue(reply(JSON.stringify({ reportes })));
+    expect(await interpretarInstruccionReporte('ventas y ganancias de octubre')).toEqual({ ...reportes[0], reportes });
+  });
+  test('normalizes a legacy single object to one report', async () => {
+    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual({ ...period, reportes: [period] });
+  });
+  test.each([[], Array(4).fill(period), [{ ...period, tipo: 'compras' }], [{ tipo: 'inventario' }]])('rejects invalid report arrays: %j', async (reportes) => {
+    fetchMock.mockResolvedValue(reply(JSON.stringify({ reportes })));
+    await expect(interpretarInstruccionReporte('reportes')).rejects.toMatchObject({ code: errorCodes.AI_INVALID_RESPONSE, statusCode: 502 });
+  });
+  test('rejects six historial items before fetch', async () => {
+    await expect(interpretarInstruccionReporte('ventas hoy', undefined, Array(6).fill(period))).rejects.toMatchObject({ code: errorCodes.VALIDATION_ERROR, statusCode: 400 });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(obtenerValor).not.toHaveBeenCalled();
+  });
+  test('clamps each report and rejects reversed dates in a later report', async () => {
+    const reportes = [period, { tipo: 'ganancias', desde: '2024-02-29', hasta: '2030-01-01' }];
+    fetchMock.mockResolvedValue(reply(JSON.stringify({ reportes })));
+    expect(await interpretarInstruccionReporte('dos reportes')).toEqual({ ...period, reportes: [period, { ...reportes[1], hasta: '2026-02-28' }] });
+    fetchMock.mockResolvedValue(reply(JSON.stringify({ reportes: [period, { ...period, desde: '2027-01-01' }] })));
+    await expect(interpretarInstruccionReporte('dos reportes')).rejects.toMatchObject({ code: errorCodes.VALIDATION_ERROR, statusCode: 400 });
+  });
   test('database model overrides env and is resolved again on every request', async () => {
     obtenerValor.mockResolvedValueOnce({ rows: [{ valor: 'deepseek-v4-flash' }] })
       .mockResolvedValueOnce({ rows: [{ valor: 'another-model' }] });
-    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual(period);
-    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual(period);
+    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual({ ...period, reportes: [period] });
+    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual({ ...period, reportes: [period] });
     expect(obtenerValor).toHaveBeenNthCalledWith(1, 'modelo_ia');
     expect(obtenerValor).toHaveBeenNthCalledWith(2, 'modelo_ia');
     expect(fetchMock.mock.calls.map(([, options]) => JSON.parse(options.body).model))
       .toEqual(['deepseek-v4-flash', 'another-model']);
   });
   test('missing database row uses env model', async () => {
-    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual(period);
+    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual({ ...period, reportes: [period] });
     expect(obtenerValor).toHaveBeenCalledWith('modelo_ia');
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).model).toBe('test-model');
   });
   test('database read failure logs warning and still fetches using env model', async () => {
     obtenerValor.mockRejectedValue(new Error('configuration table missing'));
-    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual(period);
+    expect(await interpretarInstruccionReporte('ventas hoy')).toEqual({ ...period, reportes: [period] });
     expect(logger.warn).toHaveBeenCalledWith('voice_model_config_unavailable', { message: 'configuration table missing' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).model).toBe('test-model');
@@ -48,7 +82,7 @@ describe('interpretarInstruccionReporte', () => {
   test('builds a valid object, authorization, model and call-time La Paz date', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-11-23T02:00:00Z'));
-    expect(await interpretarInstruccionReporte('ventas este mes')).toEqual(period);
+    expect(await interpretarInstruccionReporte('ventas este mes')).toEqual({ ...period, reportes: [period] });
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('https://example.test/v1/chat/completions');
     expect(options.headers.Authorization).toBe('Bearer test-key');
@@ -85,12 +119,12 @@ describe('interpretarInstruccionReporte', () => {
     const contexto = { tipo: 'ventas', desde: '2026-11-01', hasta: '2026-11-23' };
     const previousMonth = { tipo: 'ventas', desde: '2026-10-01', hasta: '2026-10-31' };
     fetchMock.mockResolvedValue(reply(JSON.stringify(previousMonth)));
-    expect(await interpretarInstruccionReporte('el mes anterior', contexto)).toEqual(previousMonth);
+    expect(await interpretarInstruccionReporte('el mes anterior', contexto)).toEqual({ ...previousMonth, reportes: [previousMonth] });
   });
   test('accepts a changed report type while preserving the contextual period', async () => {
     const changedType = { ...period, tipo: 'ganancias' };
     fetchMock.mockResolvedValue(reply(JSON.stringify(changedType)));
-    expect(await interpretarInstruccionReporte('y ganancias de ese mes?', period)).toEqual(changedType);
+    expect(await interpretarInstruccionReporte('y ganancias de ese mes?', period)).toEqual({ ...changedType, reportes: [changedType] });
   });
   test.each([
     { ...period, tipo: 'compras' },
@@ -121,7 +155,7 @@ describe('interpretarInstruccionReporte', () => {
   });
   test('parses fenced json', async () => {
     fetchMock.mockResolvedValue(reply(`\`\`\`json\n${JSON.stringify(period)}\n\`\`\``));
-    expect(await interpretarInstruccionReporte('ventas este mes')).toEqual(period);
+    expect(await interpretarInstruccionReporte('ventas este mes')).toEqual({ ...period, reportes: [period] });
   });
   test.each(['not JSON', '{}', JSON.stringify({ ...period, tipo: 'otro' }), JSON.stringify({ ...period, desde: '' }), JSON.stringify({ ...period, hasta: '2026-02-30' }), JSON.stringify({ tipo: 'inventario' })])('invalid JSON or Zod payload -> AI_INVALID_RESPONSE: %s', async (content) => {
     fetchMock.mockResolvedValue(reply(content));
@@ -159,16 +193,16 @@ describe('interpretarInstruccionReporte', () => {
     ['2024-02-29', '2026-02-28'],
   ])('clamps max 2 calendar years from %s', async (desde, hasta) => {
     fetchMock.mockResolvedValue(reply(JSON.stringify({ ...period, desde, hasta: '2030-01-01' })));
-    expect(await interpretarInstruccionReporte('ventas históricas')).toEqual({ ...period, desde, hasta });
+    expect(await interpretarInstruccionReporte('ventas históricas')).toEqual({ ...period, desde, hasta, reportes: [{ ...period, desde, hasta }] });
   });
   test.each(['ventas', 'ganancias', 'rotacion'])('preserves valid %s periods at exactly 2 years', async (tipo) => {
     const result = { tipo, desde: '2024-01-01', hasta: '2026-01-01', titulo: 'Reporte' };
     fetchMock.mockResolvedValue(reply(JSON.stringify(result)));
-    expect(await interpretarInstruccionReporte('reporte')).toEqual(result);
+    expect(await interpretarInstruccionReporte('reporte')).toEqual({ ...result, reportes: [{ tipo, desde: result.desde, hasta: result.hasta }] });
   });
   test('accepts inventory with only fechaCorte', async () => {
     const result = { tipo: 'inventario', fechaCorte: '2026-11-22' };
     fetchMock.mockResolvedValue(reply(JSON.stringify(result)));
-    expect(await interpretarInstruccionReporte('inventario hoy')).toEqual(result);
+    expect(await interpretarInstruccionReporte('inventario hoy')).toEqual({ ...result, reportes: [result] });
   });
 });
