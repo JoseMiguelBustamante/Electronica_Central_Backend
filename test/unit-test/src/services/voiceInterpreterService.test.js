@@ -53,7 +53,7 @@ describe('interpretarInstruccionReporte', () => {
     expect(url).toBe('https://example.test/v1/chat/completions');
     expect(options.headers.Authorization).toBe('Bearer test-key');
     const body = JSON.parse(options.body);
-    expect(body).toMatchObject({ model: 'test-model', temperature: 0, max_tokens: 2000 });
+    expect(body).toMatchObject({ model: 'test-model', temperature: 0, max_tokens: 4000 });
     expect(body.messages[0].content).toContain('2026-11-22');
     for (const phrase of ['America/La_Paz', 'ventas', 'ganancias', 'inventario', 'rotacion', 'esta semana', 'lunes', 'este mes', 'este año', 'hoy', 'ayer', 'últimos 30 días', 'explícitas']) {
       expect(body.messages[0].content).toContain(phrase);
@@ -69,7 +69,7 @@ describe('interpretarInstruccionReporte', () => {
     const contexto = { tipo: 'ventas', desde: '2026-11-01', hasta: '2026-11-23' };
     await interpretarInstruccionReporte('y ganancias de ese mes?', contexto);
     const { messages, max_tokens } = JSON.parse(fetchMock.mock.calls[0][1].body);
-    expect(max_tokens).toBe(2000);
+    expect(max_tokens).toBe(4000);
     expect(messages[0].content).toContain('Hoy es 2026-11-23 en America/La_Paz');
     expect(messages[0].content).toContain('SOLO un objeto JSON');
     expect(messages).toContainEqual(expect.objectContaining({

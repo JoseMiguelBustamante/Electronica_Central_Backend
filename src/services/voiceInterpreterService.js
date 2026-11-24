@@ -48,7 +48,7 @@ export const interpretarInstruccionReporte = async (texto, contexto) => {
       body: JSON.stringify({
         model: modelo,
         temperature: 0,
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: [
           { role: 'system', content: systemPrompt(formatLaPazDate(new Date())) },
           ...(contexto === undefined ? [] : [{
