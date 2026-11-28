@@ -55,7 +55,7 @@ Detalle: `scripts/seed/README.md`.
 
 ## Docs de requisitos
 
-- Perfil académico Ciclo 2: `docs/PerfilGrupo14_2doCiclo.docx`
+- Perfil académico Ciclo 4: `docs/PerfilGrupo14_4to Ciclo.docx`
 - Verificación operacional vs Ciclo 2: `docs/ciclo-2-verificacion.md`
 
 ## Correo SMTP (recuperación de contraseña)

@@ -1,12 +1,13 @@
 # Ciclo 2 — verificación vs perfil
 
-Fuente de requisitos: `docs/PerfilGrupo14_2doCiclo.docx` (Grupo 14, UAGRM).  
+Fuente de requisitos original: perfil académico del Ciclo 2 (Grupo 14, UAGRM), reemplazado en el repo por
+`docs/PerfilGrupo14_4to Ciclo.docx` (Ciclo 4). Este documento es el registro histórico de la verificación del Ciclo 2.  
 Ambiente verificado: VPS local (`API :3001`, catálogo público vía Traefik en `http://187.127.19.244/`).  
 Fecha de verificación: 2026-10-15.
 
 ## Quick path
 
-1. Abrir el perfil académico en `docs/PerfilGrupo14_2doCiclo.docx`.
+1. Abrir el perfil académico vigente en `docs/PerfilGrupo14_4to Ciclo.docx` (el perfil del Ciclo 2 ya no está en el repo).
 2. Revisar la tabla de estado abajo (CU del Ciclo 2).
 3. Reprobar con los comandos de la sección Evidencia.
 
@@ -90,7 +91,7 @@ Catálogo público (sin login): `http://187.127.19.244/`
 
 ## Checklist
 
-- [x] Perfil Ciclo 2 archivado en el repo (`docs/PerfilGrupo14_2doCiclo.docx`)
+- [x] Perfil Ciclo 2 verificado (documento luego reemplazado por `docs/PerfilGrupo14_4to Ciclo.docx`)
 - [x] Migraciones + bootstrap + seed Excel aplicados
 - [x] API Ciclo 2 responde (inventario, proveedores, compras, bitácora)
 - [x] UI Ciclo 1 y 2 completa en el frontend
