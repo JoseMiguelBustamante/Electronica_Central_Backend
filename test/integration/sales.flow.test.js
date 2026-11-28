@@ -275,4 +275,67 @@ describe('sales flow with PostgreSQL', () => {
     expect(comprobante.body.data.numero).toBeTruthy();
     expect(comprobante.body.data.total).toBe(20);
   });
+
+  test('no confirma una venta si el producto no tiene costo cargado', async () => {
+    const authorize = { Authorization: `Bearer ${adminToken}` };
+    const productoSinCosto = await seedProductWithStock(adminToken, `${suffix}nc`, 0);
+
+    // Existencia con stock pero sin costo: el escenario que congela la ganancia en cero.
+    await query(
+      'UPDATE electronica_az.existencia SET stock_actual = 5, costo_promedio = 0 WHERE id_producto = $1',
+      [productoSinCosto],
+    );
+
+    const draft = await request(app).post('/api/ventas').set(authorize).send({
+      idCliente: clientId,
+      detalles: [{ idProducto: productoSinCosto, cantidad: 2, precioUnitario: 10 }],
+    });
+    expect(draft.status).toBe(201);
+    const idVenta = draft.body.data.idVenta;
+
+    const confirm = await request(app)
+      .post(`/api/ventas/${idVenta}/confirmar`)
+      .set(authorize)
+      .send({ claveIdempotencia: `conf-sin-costo-${suffix}` });
+
+    expect(confirm.status).toBe(422);
+    expect(confirm.body.error.code).toBe('UE001');
+    expect(confirm.body.error.details.reason).toBe('PRODUCT_WITHOUT_COST');
+    expect(confirm.body.error.details.idProducto).toBe(productoSinCosto);
+
+    // El rechazo no deja rastro: la venta sigue en borrador, el stock no cambia y no hay salida.
+    const venta = await query('SELECT estado FROM electronica_az.venta WHERE id_venta = $1', [idVenta]);
+    expect(venta.rows[0].estado).toBe('BORRADOR');
+
+    const existencia = await query(
+      'SELECT stock_actual FROM electronica_az.existencia WHERE id_producto = $1',
+      [productoSinCosto],
+    );
+    expect(Number(existencia.rows[0].stock_actual)).toBe(5);
+
+    const salidas = await query(
+      `SELECT count(*)::int AS n FROM electronica_az.movimiento_inventario
+       WHERE id_producto = $1 AND tipo = 'SALIDA'`,
+      [productoSinCosto],
+    );
+    expect(salidas.rows[0].n).toBe(0);
+
+    // Con el costo cargado, la misma venta se confirma y congela ese costo.
+    await query(
+      'UPDATE electronica_az.existencia SET costo_promedio = 6.5 WHERE id_producto = $1',
+      [productoSinCosto],
+    );
+    const reintento = await request(app)
+      .post(`/api/ventas/${idVenta}/confirmar`)
+      .set(authorize)
+      .send({ claveIdempotencia: `conf-con-costo-${suffix}` });
+    expect(reintento.status).toBe(200);
+    expect(reintento.body.data.estado).toBe('CONFIRMADA');
+
+    const detalle = await query(
+      'SELECT costo_unitario_historico FROM electronica_az.detalle_venta WHERE id_venta = $1',
+      [idVenta],
+    );
+    expect(Number(detalle.rows[0].costo_unitario_historico)).toBe(6.5);
+  });
 });

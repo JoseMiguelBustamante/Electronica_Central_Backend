@@ -259,6 +259,17 @@ export const confirmSale = async (idVenta, idUsuario) => withTransaction(async (
   );
   const existenceById = new Map(existences.rows.map((row) => [row.id_producto, row]));
 
+  // Un producto sin costo congelaría la línea de venta con costo cero e inflaría la ganancia
+  // del reporte CU-18 de forma permanente. Se valida antes del bucle de escritura: con este
+  // cliente, un `return` posterior a cualquier escritura confirma la transacción y deja
+  // movimientos y descuentos de stock de las líneas ya procesadas.
+  for (const detail of details.rows) {
+    const existence = existenceById.get(detail.id_producto);
+    if (existence && Number(existence.costo_promedio) <= 0) {
+      return { status: 'MISSING_COST', idProducto: detail.id_producto };
+    }
+  }
+
   const movimientos = [];
   for (const detail of details.rows) {
     if (!detail.producto_activo) {

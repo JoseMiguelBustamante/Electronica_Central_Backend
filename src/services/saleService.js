@@ -282,6 +282,12 @@ export const confirmSaleService = async (id, body, usuario) => {
       idProducto: result.idProducto,
     });
   }
+  if (result.status === 'MISSING_COST') {
+    throw new AppError(errorCodes.BUSINESS_RULE, 422, {
+      reason: 'PRODUCT_WITHOUT_COST',
+      idProducto: result.idProducto,
+    });
+  }
   if (result.status === 'INACTIVE_PRODUCT' || result.status === 'MISSING_EXISTENCE' || result.status === 'NO_DETAILS') {
     throw new AppError(errorCodes.BUSINESS_RULE, 422, { reason: result.status });
   }
